@@ -20,6 +20,8 @@ int money_count;
 int tile_idx;
 char dmg_rolled;
 
+char auto_tick_music = 0;
+
 const char weapon_modifiers[] = {0, 3, 0, 1, 0};
 
 void draw_ui() {
@@ -81,6 +83,7 @@ int main () {
     player_mp = 2;
 
     play_song(ASSET__asset_main__song1_mid, REPEAT_LOOP);
+    auto_tick_music = 1;
 
     while (1) {                                     //  Run forever
         update_inputs();
@@ -210,7 +213,7 @@ int main () {
 
         await_vsync(1);
         flip_pages();
-        tick_music();
+        //tick_music();
     }
  
   return (0);                                     //  We should never get here!
