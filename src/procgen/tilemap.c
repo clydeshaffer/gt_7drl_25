@@ -66,6 +66,7 @@ void randomize_tmp_breaks() {
 void tunnel_between_points(char x1, char y1, char x2, char y2) {
     char x, y, dx, dy, axis;
     char do_door = 1;
+    int ind;
     x = x1;
     y = y1;
 
@@ -75,12 +76,14 @@ void tunnel_between_points(char x1, char y1, char x2, char y2) {
     if(y2 < y1) dy = 255;
 
     while((x!=x2) || (y!=y2)) {
-        if(do_door && ((rnd()&15)==0) && (tilemap[MAPINDEX(y,x)] & 128)) {
-            object_layer[MAPINDEX(y,x)] = 0x14;
+        ind = MAPINDEX(y,x);
+        if(do_door && ((rnd()&15)==0) && (tilemap[ind] & 128)) {
+            object_layer[ind] = 0x14;
             do_door = 0;
         }
 
-        tilemap[MAPINDEX(y,x)] = 0;
+        tilemap[ind] = 0;
+        
 
         axis = rnd() & 128;
         if(x == x2) axis = 128;
@@ -128,7 +131,7 @@ void setup_dungeon_render() {
 void generate_dungeon() {
     static char r, c;
     static char* tile_cursor;
-    
+
     reset_enemies();
 
     tile_cursor = tilemap;
@@ -250,6 +253,16 @@ void generate_dungeon() {
             ++tile_cursor;
         }
     }
+
+    tile_cursor = object_layer;
+    for(r = 0; r < MAP_WIDTH; ++r) {
+        for(c = 0; c < MAP_WIDTH; ++c) {
+            if(*tile_cursor == 0x14) {
+                tilemap[MAPINDEX(r,c)] = 128;
+            }
+            ++tile_cursor;
+        }
+    }
 }
 
 void draw_dungeon(char x, char y) {
@@ -263,7 +276,7 @@ void draw_dungeon(char x, char y) {
     DIRECT_SET_HEIGHT(TILE_WIDTH);
     DIRECT_SET_COLOR(0);
     for(r = 0; r < MAP_DRAW_WIDTH; r+=TILE_WIDTH) {
-        DIRECT_SET_DEST_Y(r+8);
+        DIRECT_SET_DEST_Y(r+MAP_DRAW_OFFSET_Y);
         for(c = 0; c < MAP_DRAW_WIDTH; c+=TILE_WIDTH) {
             t = *tile_cursor;
             await_drawing();
@@ -273,7 +286,7 @@ void draw_dungeon(char x, char y) {
                 flagsMirror &= ~DMA_COLORFILL_ENABLE;
             }
             *dma_flags = flagsMirror;
-            DIRECT_SET_DEST_X(c+8);
+            DIRECT_SET_DEST_X(c+MAP_DRAW_OFFSET_X);
             DIRECT_SET_SOURCE_X(t&127);
             DIRECT_DRAW_START();
             ++tile_cursor;
@@ -288,13 +301,13 @@ void draw_dungeon(char x, char y) {
     *dma_flags = flagsMirror;
     direct_transparent_mode(1);
     for(r = 0; r < MAP_DRAW_WIDTH; r+=TILE_WIDTH) {
-        DIRECT_SET_DEST_Y(r+8);
+        DIRECT_SET_DEST_Y(r+MAP_DRAW_OFFSET_Y);
         for(c = 0; c < MAP_DRAW_WIDTH; c+=TILE_WIDTH) {
             t = *tile_cursor2;
             if(t) {
                 t = enemy_icons[t-1];
                 await_drawing();
-                DIRECT_SET_DEST_X(c+8);
+                DIRECT_SET_DEST_X(c+MAP_DRAW_OFFSET_X);
                 DIRECT_SET_SOURCE_X((15&t)<<3);
                 DIRECT_SET_SOURCE_Y((t&0xF0) >> 1);
                 DIRECT_DRAW_START();
@@ -302,7 +315,7 @@ void draw_dungeon(char x, char y) {
                 t = *tile_cursor;
                 if(t) {
                     await_drawing();
-                    DIRECT_SET_DEST_X(c+8);
+                    DIRECT_SET_DEST_X(c+MAP_DRAW_OFFSET_X);
                     DIRECT_SET_SOURCE_X((15&t)<<3);
                     DIRECT_SET_SOURCE_Y((t&0xF0) >> 1);
                     DIRECT_DRAW_START();

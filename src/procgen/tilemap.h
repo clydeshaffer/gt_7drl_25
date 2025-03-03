@@ -2,6 +2,8 @@
 #define TILEMAP_H
 
 #define MAP_WIDTH 32
+#define MAP_DRAW_OFFSET_X 8
+#define MAP_DRAW_OFFSET_Y 8
 #define TILE_WIDTH 8
 #define MAP_DRAW_TILES 12
 #define MAP_DRAW_WIDTH 96
