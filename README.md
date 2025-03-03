@@ -1,4 +1,6 @@
-# My GameTank Game
+# Lemmie's Adventure
+
+Built for the 2025 edition of the 7 Day Roguelike Challenge
 
 Build it with the "make" command
 
