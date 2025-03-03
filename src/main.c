@@ -76,81 +76,86 @@ int main () {
         old_x = player_x;
         old_y = player_y;
 
-        if(player1_new_buttons & INPUT_MASK_ANY_DIRECTION) {
-            object_layer[MAPINDEX(player_y, player_x)] = 0;
-        }
+        if(player_hp) {
+            if(player1_new_buttons & INPUT_MASK_ANY_DIRECTION) {
+                object_layer[MAPINDEX(player_y, player_x)] = 0;
+            }
 
-        if(player1_new_buttons & INPUT_MASK_LEFT) --player_x;
-        else if(player1_new_buttons & INPUT_MASK_RIGHT) ++player_x;
-        else if(player1_new_buttons & INPUT_MASK_UP) --player_y;
-        else if(player1_new_buttons & INPUT_MASK_DOWN) ++player_y;
+            if(player1_new_buttons & INPUT_MASK_LEFT) --player_x;
+            else if(player1_new_buttons & INPUT_MASK_RIGHT) ++player_x;
+            else if(player1_new_buttons & INPUT_MASK_UP) --player_y;
+            else if(player1_new_buttons & INPUT_MASK_DOWN) ++player_y;
 
-        if(player1_new_buttons & INPUT_MASK_ANY_DIRECTION) {
-            tile_idx = MAPINDEX(player_y, player_x);
-            if (enemy_layer[tile_idx]) {
-                player_x = old_x;
-                player_y = old_y;
-            } else if(tilemap[tile_idx] & 128) {
-                if((object_layer[tile_idx] == 0x14) && key_count) {
-                    --key_count;
-                    tilemap[tile_idx] = 0;
-                    push_log(WORDS_TAG_UNLOCKED_START, WORDS_TAG_DOOR_START, 255);
-                } else {
+            if(player1_new_buttons & INPUT_MASK_ANY_DIRECTION) {
+                tile_idx = MAPINDEX(player_y, player_x);
+                if (enemy_layer[tile_idx]) {
                     player_x = old_x;
                     player_y = old_y;
-                }
-            }
-            else{
-                hit_obj = object_layer[tile_idx];
-                if(hit_obj) {
-                    if((hit_obj & 0xF0) == 0x60) {
-                        switch(hit_obj) {
-                            case 0x66:
-                                push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_SWORD_START, 255);
-                                player_icon = 0x41;
-                                break;
-                            case 0x67:
-                                push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_LONGBOW_START, 255);
-                                player_icon = 0x42;
-                                break;
-                            case 0x68:
-                                push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_STAFF_START, 255);
-                                player_icon = 0x43;
-                                break;
-                            case 0x60:
-                                push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_GOLD_PILE_START, 255);
-                                money_count += 15;
-                                break;
-                            case 0x61:
-                                push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_COINS_START, 255);
-                                money_count += 3;
-                                break;
-                            case 0x65:
-                                ++key_count;
-                                push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_KEY_START, 255);
-                                break;
-                            case 0x62:
-                                push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_RED_POTION_START, 255);
-                                ++player_hp;
-                                break;
-                            case 0x63:
-                                push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_GREEN_POTION_START, 255);
-                                break;
-                            case 0x64:
-                                push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_BLUE_POTION_START, 255);
-                                ++player_mp;
-                                break;
-                        }
+                } else if(tilemap[tile_idx] & 128) {
+                    if((object_layer[tile_idx] == 0x14) && key_count) {
+                        --key_count;
+                        tilemap[tile_idx] = 0;
+                        push_log(WORDS_TAG_UNLOCKED_START, WORDS_TAG_DOOR_START, 255);
                     } else {
                         player_x = old_x;
                         player_y = old_y;
                     }
                 }
+                else{
+                    hit_obj = object_layer[tile_idx];
+                    if(hit_obj) {
+                        if((hit_obj & 0xF0) == 0x60) {
+                            switch(hit_obj) {
+                                case 0x66:
+                                    push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_SWORD_START, 255);
+                                    player_icon = 0x41;
+                                    break;
+                                case 0x67:
+                                    push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_LONGBOW_START, 255);
+                                    player_icon = 0x42;
+                                    break;
+                                case 0x68:
+                                    push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_STAFF_START, 255);
+                                    player_icon = 0x43;
+                                    break;
+                                case 0x60:
+                                    push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_GOLD_PILE_START, 255);
+                                    money_count += 15;
+                                    break;
+                                case 0x61:
+                                    push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_COINS_START, 255);
+                                    money_count += 3;
+                                    break;
+                                case 0x65:
+                                    ++key_count;
+                                    push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_KEY_START, 255);
+                                    break;
+                                case 0x62:
+                                    push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_RED_POTION_START, 255);
+                                    ++player_hp;
+                                    break;
+                                case 0x63:
+                                    push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_GREEN_POTION_START, 255);
+                                    break;
+                                case 0x64:
+                                    push_log(WORDS_TAG_PICKED_UP_START, WORDS_TAG_BLUE_POTION_START, 255);
+                                    ++player_mp;
+                                    break;
+                            }
+                        } else {
+                            player_x = old_x;
+                            player_y = old_y;
+                        }
+                    }
+                }
+
+                object_layer[MAPINDEX(player_y, player_x)] = player_icon;
+
+                act_enemies();
             }
-
+        } else {
+            player_icon = 0x44;
             object_layer[MAPINDEX(player_y, player_x)] = player_icon;
-
-            act_enemies();
         }
 
         if((player_x - box_x) > 8) ++box_x;

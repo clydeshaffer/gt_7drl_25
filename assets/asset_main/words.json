@@ -206,6 +206,14 @@
     "spriteSourceSize": { "x": 64, "y": 64, "w": 23, "h": 5 },
     "sourceSize": { "w": 128, "h": 128 },
     "duration": 100
+   },
+   "words 26.aseprite": {
+    "frame": { "x": 15, "y": 35, "w": 15, "h": 5 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 64, "y": 64, "w": 15, "h": 5 },
+    "sourceSize": { "w": 128, "h": 128 },
+    "duration": 100
    }
  },
  "meta": {
@@ -241,7 +249,8 @@
    { "name": "staff", "from": 22, "to": 22, "direction": "forward", "color": "#000000ff" },
    { "name": "spikes", "from": 23, "to": 23, "direction": "forward", "color": "#000000ff" },
    { "name": "chest", "from": 24, "to": 24, "direction": "forward", "color": "#000000ff" },
-   { "name": "door", "from": 25, "to": 25, "direction": "forward", "color": "#000000ff" }
+   { "name": "door", "from": 25, "to": 25, "direction": "forward", "color": "#000000ff" },
+   { "name": "Slain", "from": 26, "to": 26, "direction": "forward", "color": "#000000ff" }
   ],
   "layers": [
    { "name": "Layer 1", "opacity": 255, "blendMode": "normal" }
