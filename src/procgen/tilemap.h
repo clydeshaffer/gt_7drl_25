@@ -5,6 +5,10 @@
 #define MAPINDEX(row,col) (col + (row<<5))
 
 extern char tilemap[MAP_WIDTH * MAP_WIDTH];
+extern char object_layer[MAP_WIDTH * MAP_WIDTH];
+
+extern char player_x;
+extern char player_y;
 
 void setup_dungeon_render();
 

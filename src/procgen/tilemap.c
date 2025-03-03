@@ -12,6 +12,9 @@ SpriteSlot dungeon_gfx;
 char tilemap[MAP_WIDTH * MAP_WIDTH];
 char object_layer[MAP_WIDTH * MAP_WIDTH];
 
+char player_x;
+char player_y;
+
 char h_breaks[BREAKS_COUNT+2];
 char v_breaks[BREAKS_COUNT+2];
 char tmp_breaks[BREAKS_COUNT+1];
@@ -194,7 +197,9 @@ void generate_dungeon() {
 
     
     room_idx = 0;
-    object_layer[MAPINDEX(rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]))] = 0x40;
+    player_x = rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]);
+    player_y = rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]);
+    object_layer[MAPINDEX(player_y, player_x)] = 0x40;
 
     tile_cursor = tilemap;
     for(r = 0; r < MAP_WIDTH; ++r) {
@@ -251,6 +256,7 @@ void draw_dungeon(char x, char y) {
     tile_cursor = object_layer + MAPINDEX(y, x);
     flagsMirror &= ~DMA_COLORFILL_ENABLE;
     *dma_flags = flagsMirror;
+    direct_transparent_mode(1);
     for(r = 0; r < MAP_DRAW_WIDTH; r+=TILE_WIDTH) {
         DIRECT_SET_DEST_Y(r+8);
         for(c = 0; c < MAP_DRAW_WIDTH; c+=TILE_WIDTH) {
