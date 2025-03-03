@@ -20,10 +20,10 @@ void draw_ui() {
     flagsMirror |= DMA_COLORFILL_ENABLE;
     *dma_flags = flagsMirror;
     DIRECT_SET_COLOR(32);
-    DIRECT_SET_DEST_X(MAP_DRAW_OFFSET_X)
-    DIRECT_SET_DEST_Y(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH);
-    DIRECT_SET_WIDTH(MAP_DRAW_WIDTH);
-    DIRECT_SET_HEIGHT(TILE_WIDTH);
+    DIRECT_SET_DEST_X(MAP_DRAW_OFFSET_X+MAP_DRAW_WIDTH);
+    DIRECT_SET_DEST_Y(MAP_DRAW_OFFSET_Y);
+    DIRECT_SET_HEIGHT(MAP_DRAW_WIDTH);
+    DIRECT_SET_WIDTH(2*TILE_WIDTH);
     DIRECT_DRAW_START();
     await_drawing();
     direct_tiled_mode(1);
@@ -31,22 +31,25 @@ void draw_ui() {
     *dma_flags = flagsMirror;
     DIRECT_SET_SOURCE_X(0);
     DIRECT_SET_SOURCE_Y(112);
-    DIRECT_SET_HEIGHT(4);
-    DIRECT_SET_WIDTH(player_hp << 2);
+    DIRECT_SET_WIDTH(4);
+    DIRECT_SET_DEST_X(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH+2);
+    DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_hp << 2));
+    DIRECT_SET_HEIGHT(player_hp << 2);
     DIRECT_DRAW_START();
     await_drawing();
-    DIRECT_SET_DEST_Y(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH+4);
-    DIRECT_SET_SOURCE_Y(116);
-    DIRECT_SET_WIDTH(player_mp << 2);
+    DIRECT_SET_DEST_X(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH+6);
+    DIRECT_SET_SOURCE_X(4);
+    DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_mp << 2));
+    DIRECT_SET_HEIGHT(player_mp << 2);
     DIRECT_DRAW_START();
     if(key_count) {
         await_drawing();
-        DIRECT_SET_DEST_X((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (key_count << 3));
-        DIRECT_SET_DEST_Y(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH);
-        DIRECT_SET_SOURCE_X(16);
+        DIRECT_SET_DEST_Y(MAP_DRAW_OFFSET_Y);
+        DIRECT_SET_DEST_X(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH);
+        DIRECT_SET_SOURCE_X(8);
         DIRECT_SET_SOURCE_Y(112);
-        DIRECT_SET_HEIGHT(8);
-        DIRECT_SET_WIDTH(key_count << 3);
+        DIRECT_SET_WIDTH(8);
+        DIRECT_SET_HEIGHT(key_count << 3);
         DIRECT_DRAW_START();
     }
 }
