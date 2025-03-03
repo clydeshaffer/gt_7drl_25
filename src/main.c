@@ -22,6 +22,7 @@ int tile_idx;
 char dmg_rolled;
 char stood_object;
 char stood_object_previous;
+char do_generation_next_frame;
 
 char auto_tick_music = 0;
 
@@ -102,8 +103,8 @@ int init_player() {
 
 int main () {
 
-    generate_dungeon();
     
+    do_generation_next_frame = 1;
 
     setup_dungeon_render();
     prepare_log_text();
@@ -112,8 +113,16 @@ int main () {
 
     play_song(ASSET__asset_main__song1_mid, REPEAT_LOOP);
     auto_tick_music = 1;
+    
 
     while (1) {                                     //  Run forever
+
+        if(do_generation_next_frame) {
+            generate_dungeon();
+            object_layer[MAPINDEX(player_y, player_x)] = player_icon;
+            do_generation_next_frame = 0;
+        }
+
         update_inputs();
 
         old_x = player_x;
@@ -176,7 +185,7 @@ int main () {
                     if(hit_obj) {
                         if((hit_obj & 0xF0) == 0x60) {
                             push_log(WORDS_TAG_STEPPED_START, pickable_names[hit_obj & 0xF], 255);
-                        } else if((hit_obj & 0xF0) == 0x50) {
+                        } else if((hit_obj & 0xF0) == 0x10) {
                             push_log(WORDS_TAG_STEPPED_START, floorobj_names[hit_obj & 0xF], 255);
                         }
                     }
@@ -241,6 +250,14 @@ int main () {
                     }
                     push_log(WORDS_TAG_PICKED_UP_START, pickable_names[hit_obj & 0xF], 255);
                     object_layer[MAPINDEX(player_y, player_x)] = player_icon;
+                } else if((hit_obj & 0xF0) == 0x10) {
+                    if(hit_obj == 0x10) {
+                        do_generation_next_frame = 1;
+                        push_log(WORDS_TAG_GENERATING_START, 255, 255);
+                        stood_object = 0x11;
+                    } else if(hit_obj == 0x11) {
+                        push_log(WORDS_TAG_UNSEEN_FORCE_START, WORDS_TAG_PREVENTS_RETREAT_START, 255);
+                    }
                 }
             }
         }

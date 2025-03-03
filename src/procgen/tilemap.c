@@ -227,8 +227,12 @@ void generate_dungeon() {
         }
     }
 
-    
-    room_idx = 0;
+    room_idx = rnd_range(0, ROOM_COUNT);
+    c = rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]);
+    r = rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]);
+    object_layer[MAPINDEX(r, c)] = 0x10;
+
+    room_idx = rnd_range(0, ROOM_COUNT);
     player_x = rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]);
     player_y = rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]);
     object_layer[MAPINDEX(player_y, player_x)] = 0x40;
