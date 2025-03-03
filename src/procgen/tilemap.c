@@ -2,6 +2,7 @@
 #include "../gt/gfx/draw_direct.h"
 #include "../gen/assets/asset_main.h"
 #include "tilemap.h"
+#include "enemies.h"
 
 #define BREAKS_COUNT 3
 #define MIN_SIZE 4
@@ -11,6 +12,7 @@ SpriteSlot dungeon_gfx;
 
 char tilemap[MAP_WIDTH * MAP_WIDTH];
 char object_layer[MAP_WIDTH * MAP_WIDTH];
+char enemy_layer[MAP_WIDTH * MAP_WIDTH];
 
 char player_x;
 char player_y;
@@ -63,6 +65,7 @@ void randomize_tmp_breaks() {
 
 void tunnel_between_points(char x1, char y1, char x2, char y2) {
     char x, y, dx, dy, axis;
+    char do_door = 1;
     x = x1;
     y = y1;
 
@@ -72,6 +75,10 @@ void tunnel_between_points(char x1, char y1, char x2, char y2) {
     if(y2 < y1) dy = 255;
 
     while((x!=x2) || (y!=y2)) {
+        if(do_door && ((rnd()&15)==0) && (tilemap[MAPINDEX(y,x)] & 128)) {
+            object_layer[MAPINDEX(y,x)] = 0x14;
+            do_door = 0;
+        }
 
         tilemap[MAPINDEX(y,x)] = 0;
 
@@ -121,6 +128,9 @@ void setup_dungeon_render() {
 void generate_dungeon() {
     static char r, c;
     static char* tile_cursor;
+    
+    reset_enemies();
+
     tile_cursor = tilemap;
     for(r = 0; r < MAP_WIDTH; ++r) {
         for(c = 0; c < MAP_WIDTH; ++c) {
@@ -130,6 +140,14 @@ void generate_dungeon() {
     }
 
     tile_cursor = object_layer;
+    for(r = 0; r < MAP_WIDTH; ++r) {
+        for(c = 0; c < MAP_WIDTH; ++c) {
+            *tile_cursor = 0;
+            ++tile_cursor;
+        }
+    }
+
+    tile_cursor = enemy_layer;
     for(r = 0; r < MAP_WIDTH; ++r) {
         for(c = 0; c < MAP_WIDTH; ++c) {
             *tile_cursor = 0;
@@ -195,6 +213,17 @@ void generate_dungeon() {
         }
     }
 
+    tile_cursor = object_layer;
+    for(r = 0; r < MAP_WIDTH; ++r) {
+        for(c = 0; c < MAP_WIDTH; ++c) {
+            if((*tile_cursor & 0xF0) == 0x50) {
+                enemy_layer[MAPINDEX(r, c)] = add_enemy(*tile_cursor & 0x0F, c, r);
+                *tile_cursor = 0;
+            }
+            ++tile_cursor;
+        }
+    }
+
     
     room_idx = 0;
     player_x = rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]);
@@ -225,7 +254,7 @@ void generate_dungeon() {
 
 void draw_dungeon(char x, char y) {
     static char r, c, t;
-    static char* tile_cursor;
+    static char* tile_cursor, *tile_cursor2;
     tile_cursor = tilemap + MAPINDEX(y, x);
     direct_prepare_sprite_mode(dungeon_gfx);
     direct_transparent_mode(0);
@@ -254,23 +283,37 @@ void draw_dungeon(char x, char y) {
     }
 
     tile_cursor = object_layer + MAPINDEX(y, x);
+    tile_cursor2 = enemy_layer + MAPINDEX(y, x);
     flagsMirror &= ~DMA_COLORFILL_ENABLE;
     *dma_flags = flagsMirror;
     direct_transparent_mode(1);
     for(r = 0; r < MAP_DRAW_WIDTH; r+=TILE_WIDTH) {
         DIRECT_SET_DEST_Y(r+8);
         for(c = 0; c < MAP_DRAW_WIDTH; c+=TILE_WIDTH) {
-            t = *tile_cursor;
+            t = *tile_cursor2;
             if(t) {
+                t = enemy_icons[t-1];
                 await_drawing();
                 DIRECT_SET_DEST_X(c+8);
                 DIRECT_SET_SOURCE_X((15&t)<<3);
                 DIRECT_SET_SOURCE_Y((t&0xF0) >> 1);
                 DIRECT_DRAW_START();
+            } else {
+                t = *tile_cursor;
+                if(t) {
+                    await_drawing();
+                    DIRECT_SET_DEST_X(c+8);
+                    DIRECT_SET_SOURCE_X((15&t)<<3);
+                    DIRECT_SET_SOURCE_Y((t&0xF0) >> 1);
+                    DIRECT_DRAW_START();
+                }
             }
             ++tile_cursor;
+            ++tile_cursor2;
         }
         tile_cursor -= MAP_DRAW_TILES;
         tile_cursor += MAP_WIDTH;
+        tile_cursor2 -= MAP_DRAW_TILES;
+        tile_cursor2 += MAP_WIDTH;
     }
 }
