@@ -104,7 +104,7 @@ int init_player() {
 int main () {
 
     
-    do_generation_next_frame = 1;
+    do_generation_next_frame = 0;
 
     setup_dungeon_render();
     prepare_log_text();
@@ -114,6 +114,16 @@ int main () {
     play_song(ASSET__asset_main__song1_mid, REPEAT_LOOP);
     auto_tick_music = 1;
     
+    push_log(WORDS_TAG_GENERATING_START, 255, 255);
+    show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y + MAP_DRAW_WIDTH + 2, 2);
+    await_draw_queue();
+
+    await_vsync(1);
+    flip_pages();
+
+    generate_dungeon();
+
+    push_log(WORDS_TAG_WELCOME_START, WORDS_TAG_DUNGEON_START, 255);
 
     while (1) {                                     //  Run forever
 

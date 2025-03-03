@@ -1,6 +1,6 @@
 { "frames": {
    "words 0.aseprite": {
-    "frame": { "x": 79, "y": 50, "w": 23, "h": 5 },
+    "frame": { "x": 26, "y": 55, "w": 23, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 23, "h": 5 },
@@ -8,7 +8,7 @@
     "duration": 100
    },
    "words 1.aseprite": {
-    "frame": { "x": 0, "y": 45, "w": 43, "h": 5 },
+    "frame": { "x": 44, "y": 40, "w": 43, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 43, "h": 5 },
@@ -32,7 +32,7 @@
     "duration": 100
    },
    "words 4.aseprite": {
-    "frame": { "x": 68, "y": 55, "w": 15, "h": 5 },
+    "frame": { "x": 15, "y": 60, "w": 15, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 15, "h": 5 },
@@ -40,7 +40,7 @@
     "duration": 100
    },
    "words 5.aseprite": {
-    "frame": { "x": 87, "y": 40, "w": 33, "h": 5 },
+    "frame": { "x": 42, "y": 50, "w": 33, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 33, "h": 5 },
@@ -48,7 +48,7 @@
     "duration": 100
    },
    "words 6.aseprite": {
-    "frame": { "x": 0, "y": 50, "w": 30, "h": 5 },
+    "frame": { "x": 75, "y": 50, "w": 30, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 30, "h": 5 },
@@ -64,7 +64,7 @@
     "duration": 100
    },
    "words 8.aseprite": {
-    "frame": { "x": 102, "y": 50, "w": 20, "h": 5 },
+    "frame": { "x": 49, "y": 55, "w": 20, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 20, "h": 5 },
@@ -72,7 +72,7 @@
     "duration": 100
    },
    "words 9.aseprite": {
-    "frame": { "x": 0, "y": 55, "w": 19, "h": 5 },
+    "frame": { "x": 69, "y": 55, "w": 19, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 19, "h": 5 },
@@ -80,7 +80,7 @@
     "duration": 100
    },
    "words 10.aseprite": {
-    "frame": { "x": 103, "y": 25, "w": 23, "h": 5 },
+    "frame": { "x": 105, "y": 50, "w": 23, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 23, "h": 5 },
@@ -88,7 +88,7 @@
     "duration": 100
    },
    "words 11.aseprite": {
-    "frame": { "x": 19, "y": 55, "w": 18, "h": 5 },
+    "frame": { "x": 88, "y": 55, "w": 18, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 18, "h": 5 },
@@ -96,7 +96,7 @@
     "duration": 100
    },
    "words 12.aseprite": {
-    "frame": { "x": 111, "y": 15, "w": 16, "h": 5 },
+    "frame": { "x": 106, "y": 55, "w": 16, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 16, "h": 5 },
@@ -104,7 +104,7 @@
     "duration": 100
    },
    "words 13.aseprite": {
-    "frame": { "x": 37, "y": 55, "w": 16, "h": 5 },
+    "frame": { "x": 111, "y": 15, "w": 16, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 16, "h": 5 },
@@ -152,7 +152,7 @@
     "duration": 100
    },
    "words 19.aseprite": {
-    "frame": { "x": 44, "y": 40, "w": 43, "h": 5 },
+    "frame": { "x": 0, "y": 45, "w": 43, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 43, "h": 5 },
@@ -192,7 +192,7 @@
     "duration": 100
    },
    "words 24.aseprite": {
-    "frame": { "x": 30, "y": 50, "w": 26, "h": 5 },
+    "frame": { "x": 0, "y": 55, "w": 26, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 26, "h": 5 },
@@ -200,7 +200,7 @@
     "duration": 100
    },
    "words 25.aseprite": {
-    "frame": { "x": 56, "y": 50, "w": 23, "h": 5 },
+    "frame": { "x": 103, "y": 25, "w": 23, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 23, "h": 5 },
@@ -208,7 +208,7 @@
     "duration": 100
    },
    "words 26.aseprite": {
-    "frame": { "x": 53, "y": 55, "w": 15, "h": 5 },
+    "frame": { "x": 0, "y": 60, "w": 15, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 15, "h": 5 },
@@ -264,7 +264,7 @@
     "duration": 100
    },
    "words 33.aseprite": {
-    "frame": { "x": 83, "y": 55, "w": 11, "h": 5 },
+    "frame": { "x": 30, "y": 60, "w": 11, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 11, "h": 5 },
@@ -280,7 +280,7 @@
     "duration": 100
    },
    "words 35.aseprite": {
-    "frame": { "x": 85, "y": 45, "w": 42, "h": 5 },
+    "frame": { "x": 0, "y": 50, "w": 42, "h": 5 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 64, "y": 64, "w": 42, "h": 5 },
@@ -310,6 +310,22 @@
     "spriteSourceSize": { "x": 64, "y": 64, "w": 42, "h": 5 },
     "sourceSize": { "w": 128, "h": 128 },
     "duration": 100
+   },
+   "words 39.aseprite": {
+    "frame": { "x": 87, "y": 40, "w": 40, "h": 5 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 64, "y": 64, "w": 40, "h": 5 },
+    "sourceSize": { "w": 128, "h": 128 },
+    "duration": 100
+   },
+   "words 40.aseprite": {
+    "frame": { "x": 85, "y": 45, "w": 42, "h": 5 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 64, "y": 64, "w": 42, "h": 5 },
+    "sourceSize": { "w": 128, "h": 128 },
+    "duration": 100
    }
  },
  "meta": {
@@ -317,7 +333,7 @@
   "version": "1.3.14-beta1-x64",
   "image": "words.bmp",
   "format": "I8",
-  "size": { "w": 128, "h": 60 },
+  "size": { "w": 128, "h": 65 },
   "scale": "1",
   "frameTags": [
    { "name": "missed", "from": 0, "to": 0, "direction": "forward", "color": "#000000ff" },
@@ -358,7 +374,9 @@
    { "name": "cast spell", "from": 35, "to": 35, "direction": "forward", "color": "#000000ff" },
    { "name": "unseen force", "from": 36, "to": 36, "direction": "forward", "color": "#000000ff" },
    { "name": "prevents retreat", "from": 37, "to": 37, "direction": "forward", "color": "#000000ff" },
-   { "name": "generating", "from": 38, "to": 38, "direction": "forward", "color": "#000000ff" }
+   { "name": "generating", "from": 38, "to": 38, "direction": "forward", "color": "#000000ff" },
+   { "name": "welcome", "from": 39, "to": 39, "direction": "forward", "color": "#000000ff" },
+   { "name": "dungeon", "from": 40, "to": 40, "direction": "forward", "color": "#000000ff" }
   ],
   "layers": [
    { "name": "Layer 1", "opacity": 255, "blendMode": "normal" }
