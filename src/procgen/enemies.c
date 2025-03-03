@@ -16,9 +16,10 @@ char enemy_count;
 
 const char enemy_type_icons[ENEMY_TYPE_COUNT] = {0x50, 0x51, 0x52, 0x53, 0x54, 0x55};
 const char enemy_type_initial_hp[ENEMY_TYPE_COUNT] = { 4, 5, 5, 3, 6, 8 };
+const char enemy_type_attack_modifiers[ENEMY_TYPE_COUNT] = { 0, 0, 1, 0, 2, 5};
 
 #define ATTACK_TABLE_SIZE 16
-const char enemy_attack_dmg_table[ATTACK_TABLE_SIZE] = { 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3};
+const char enemy_attack_dmg_table[ATTACK_TABLE_SIZE] = { 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3};
 
 const char enemy_type_name[ENEMY_TYPE_COUNT] = {
     WORDS_TAG_BEETLE_START,
@@ -32,6 +33,10 @@ const char enemy_type_name[ENEMY_TYPE_COUNT] = {
 char enemy_idx;
 
 extern char player_hp;
+
+char roll_damage(char mod) {
+    return enemy_attack_dmg_table[rnd_range(0, ATTACK_TABLE_SIZE - mod) + mod];
+}
 
 void reset_enemies() {
     enemy_count = 0;
@@ -85,7 +90,7 @@ void act_enemies() {
             tmpidx = MAPINDEX(ty, tx);
             if(!(tilemap[tmpidx] & 128) && !(enemy_layer[tmpidx])) {
                 if((object_layer[tmpidx] & 0xF0) == 0x40) {
-                    dmg = enemy_attack_dmg_table[rnd_range(0, ATTACK_TABLE_SIZE)];
+                    dmg = roll_damage(enemy_type_attack_modifiers[enemy_types[enemy_idx]]);
                     player_hp -= dmg;
                     if(player_hp & 128) player_hp = 0;
                     if(player_hp == 0) {

@@ -16,6 +16,9 @@ char player_hp;
 char player_mp;
 int money_count;
 int tile_idx;
+char dmg_rolled;
+
+const char weapon_modifiers[] = {0, 3, 0, 1, 0};
 
 void draw_ui() {
     await_drawing();
@@ -35,15 +38,20 @@ void draw_ui() {
     DIRECT_SET_SOURCE_Y(112);
     DIRECT_SET_WIDTH(4);
     DIRECT_SET_DEST_X(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH+2);
-    DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_hp << 2));
-    DIRECT_SET_HEIGHT(player_hp << 2);
-    DIRECT_DRAW_START();
+    if(player_hp) {
+        DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_hp << 2));
+        DIRECT_SET_HEIGHT(player_hp << 2);
+    
+        DIRECT_DRAW_START();
+    }
     await_drawing();
     DIRECT_SET_DEST_X(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH+6);
     DIRECT_SET_SOURCE_X(4);
-    DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_mp << 2));
-    DIRECT_SET_HEIGHT(player_mp << 2);
-    DIRECT_DRAW_START();
+    if(player_mp) {
+        DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_mp << 2));
+        DIRECT_SET_HEIGHT(player_mp << 2);
+        DIRECT_DRAW_START();
+    }
     if(key_count) {
         await_drawing();
         DIRECT_SET_DEST_Y(MAP_DRAW_OFFSET_Y);
@@ -88,7 +96,23 @@ int main () {
 
             if(player1_new_buttons & INPUT_MASK_ANY_DIRECTION) {
                 tile_idx = MAPINDEX(player_y, player_x);
-                if (enemy_layer[tile_idx]) {
+                hit_obj = enemy_layer[tile_idx];
+                if (hit_obj) {
+                    --hit_obj;
+
+                    dmg_rolled = roll_damage(weapon_modifiers[player_icon & 0x0F]);
+                    
+                    enemy_hp[hit_obj] -= dmg_rolled;
+                    if(enemy_hp[hit_obj] & 128) {
+                        enemy_hp[hit_obj] = 0;
+                    }
+
+                    if(!enemy_hp[hit_obj]) {
+                        dmg_rolled = WORDS_TAG_SLEW_START;
+                        enemy_layer[tile_idx] = 0;
+                    }
+                    push_log(dmg_rolled, enemy_type_name[enemy_types[hit_obj]], 255);
+
                     player_x = old_x;
                     player_y = old_y;
                 } else if(tilemap[tile_idx] & 128) {
