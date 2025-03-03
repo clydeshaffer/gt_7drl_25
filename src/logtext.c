@@ -51,7 +51,7 @@ void show_logs(char x, char y, char count) {
     while(count > 0) {
         tx = x;
         for(tok = 0; tok < 4; ++tok) {
-            if(~log_chunk_buf[i]) {
+            if(log_chunk_buf[i] != 255) {
                 queue_draw_sprite_frame(text_sheet, tx, ty, log_chunk_buf[i], 0);
                 tx += sprite_temp_frame.w + 4;
             }
