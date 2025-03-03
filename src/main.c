@@ -6,6 +6,8 @@
 #include "procgen/enemies.h"
 #include "logtext.h"
 #include "gen/assets/asset_main/words.json.h"
+#include "gen/assets/asset_main.h"
+#include "gt/audio/music.h"
 
 char box_x = 0, box_y = 0;
 char old_x = 1, old_y = 1;
@@ -77,6 +79,8 @@ int main () {
     money_count = 0;
     player_hp = 8;
     player_mp = 2;
+
+    play_song(ASSET__asset_main__song1_mid, REPEAT_LOOP);
 
     while (1) {                                     //  Run forever
         update_inputs();
@@ -206,7 +210,7 @@ int main () {
 
         await_vsync(1);
         flip_pages();
- 
+        tick_music();
     }
  
   return (0);                                     //  We should never get here!
