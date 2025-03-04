@@ -1,6 +1,8 @@
 #include "../gt/feature/random/random.h"
 #include "../gt/gfx/draw_direct.h"
+#include "../gt/banking.h"
 #include "../gen/assets/asset_main.h"
+#include "../gen/bank_nums.h"
 #include "tilemap.h"
 #include "enemies.h"
 
@@ -128,7 +130,9 @@ void setup_dungeon_render() {
     dungeon_gfx = allocate_sprite(&ASSET__asset_main__tiles_bmp_load_list);
 }
 
-void generate_dungeon() {
+#pragma code-name(push, "PROG0")
+
+void generate_dungeon_impl() {
     static char r, c;
     static char* tile_cursor;
 
@@ -267,6 +271,15 @@ void generate_dungeon() {
             ++tile_cursor;
         }
     }
+}
+
+#pragma code-name (pop)
+
+void generate_dungeon() {
+    push_rom_bank();
+    change_rom_bank(BANK_PROG0);
+    generate_dungeon_impl();
+    pop_rom_bank();
 }
 
 void draw_dungeon(char x, char y) {

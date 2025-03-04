@@ -26,6 +26,8 @@ char do_generation_next_frame;
 
 char auto_tick_music = 0;
 
+char pause_mode = 0;
+
 const char weapon_modifiers[] = {0, 3, 0, 1, 0};
 
 const char pickable_names[] = {
@@ -141,74 +143,76 @@ int main () {
         stood_object_previous = stood_object;
         stood_object = 0;
 
-        if(player_hp) {
-            if(player1_new_buttons & INPUT_MASK_ANY_DIRECTION) {
-                did_move = 1;
-                object_layer[MAPINDEX(player_y, player_x)] = 0;
-            }
+        if(!pause_mode) {
+            if(player_hp) {
+                if(player1_new_buttons & INPUT_MASK_ANY_DIRECTION) {
+                    did_move = 1;
+                    object_layer[MAPINDEX(player_y, player_x)] = 0;
+                }
 
-            if(player1_new_buttons & INPUT_MASK_LEFT) --player_x;
-            else if(player1_new_buttons & INPUT_MASK_RIGHT) ++player_x;
-            else if(player1_new_buttons & INPUT_MASK_UP) --player_y;
-            else if(player1_new_buttons & INPUT_MASK_DOWN) ++player_y;
+                if(player1_new_buttons & INPUT_MASK_LEFT) --player_x;
+                else if(player1_new_buttons & INPUT_MASK_RIGHT) ++player_x;
+                else if(player1_new_buttons & INPUT_MASK_UP) --player_y;
+                else if(player1_new_buttons & INPUT_MASK_DOWN) ++player_y;
 
-            if(player1_new_buttons & INPUT_MASK_ANY_DIRECTION) {
-                tile_idx = MAPINDEX(player_y, player_x);
-                hit_obj = enemy_layer[tile_idx];
-                if (hit_obj) { //Bumped Enemy
-                    --hit_obj;
+                if(player1_new_buttons & INPUT_MASK_ANY_DIRECTION) {
+                    tile_idx = MAPINDEX(player_y, player_x);
+                    hit_obj = enemy_layer[tile_idx];
+                    if (hit_obj) { //Bumped Enemy
+                        --hit_obj;
 
-                    dmg_rolled = roll_damage(weapon_modifiers[player_icon & 0x0F]);
-                    
-                    enemy_hp[hit_obj] -= dmg_rolled;
-                    if(enemy_hp[hit_obj] & 128) {
-                        enemy_hp[hit_obj] = 0;
-                    }
+                        dmg_rolled = roll_damage(weapon_modifiers[player_icon & 0x0F]);
+                        
+                        enemy_hp[hit_obj] -= dmg_rolled;
+                        if(enemy_hp[hit_obj] & 128) {
+                            enemy_hp[hit_obj] = 0;
+                        }
 
-                    if(!enemy_hp[hit_obj]) {
-                        dmg_rolled = WORDS_TAG_SLEW_START;
-                        enemy_layer[tile_idx] = 0;
-                    }
-                    push_log(dmg_rolled, enemy_type_name[enemy_types[hit_obj]], 255);
+                        if(!enemy_hp[hit_obj]) {
+                            dmg_rolled = WORDS_TAG_SLEW_START;
+                            enemy_layer[tile_idx] = 0;
+                        }
+                        push_log(dmg_rolled, enemy_type_name[enemy_types[hit_obj]], 255);
 
-                    player_x = old_x;
-                    player_y = old_y;
-                    did_move = 0;
-                } else if(tilemap[tile_idx] & 128) {
-                    //Door is a special case, it sits on a wall piece
-                    //then removes itself and the wall piece after unlocking
-                    if((object_layer[tile_idx] == 0x14) && key_count) {
-                        --key_count;
-                        tilemap[tile_idx] = 0;
-                        push_log(WORDS_TAG_UNLOCKED_START, WORDS_TAG_DOOR_START, 255);
-                    } else {
                         player_x = old_x;
                         player_y = old_y;
                         did_move = 0;
-                    }
-                }
-                else{ 
-                    
-                    //Stepping onto object
-                    hit_obj = object_layer[tile_idx];
-                    stood_object = hit_obj;
-                    if(hit_obj) {
-                        if((hit_obj & 0xF0) == 0x60) {
-                            push_log(WORDS_TAG_STEPPED_START, pickable_names[hit_obj & 0xF], 255);
-                        } else if((hit_obj & 0xF0) == 0x10) {
-                            push_log(WORDS_TAG_STEPPED_START, floorobj_names[hit_obj & 0xF], 255);
+                    } else if(tilemap[tile_idx] & 128) {
+                        //Door is a special case, it sits on a wall piece
+                        //then removes itself and the wall piece after unlocking
+                        if((object_layer[tile_idx] == 0x14) && key_count) {
+                            --key_count;
+                            tilemap[tile_idx] = 0;
+                            push_log(WORDS_TAG_UNLOCKED_START, WORDS_TAG_DOOR_START, 255);
+                        } else {
+                            player_x = old_x;
+                            player_y = old_y;
+                            did_move = 0;
                         }
                     }
+                    else{ 
+                        
+                        //Stepping onto object
+                        hit_obj = object_layer[tile_idx];
+                        stood_object = hit_obj;
+                        if(hit_obj) {
+                            if((hit_obj & 0xF0) == 0x60) {
+                                push_log(WORDS_TAG_STEPPED_START, pickable_names[hit_obj & 0xF], 255);
+                            } else if((hit_obj & 0xF0) == 0x10) {
+                                push_log(WORDS_TAG_STEPPED_START, floorobj_names[hit_obj & 0xF], 255);
+                            }
+                        }
+                    }
+
+
+                    object_layer[MAPINDEX(player_y, player_x)] = player_icon;
+
+                    act_enemies();
                 }
-
-
+            } else {
+                player_icon = 0x44;
                 object_layer[MAPINDEX(player_y, player_x)] = player_icon;
-
-                act_enemies();
             }
-        } else {
-            player_icon = 0x44;
-            object_layer[MAPINDEX(player_y, player_x)] = player_icon;
         }
 
         if(did_move) {
@@ -283,15 +287,20 @@ int main () {
         if(box_y == (MAP_WIDTH-MAP_DRAW_TILES+1)) --box_y;
 
         if(player1_new_buttons & INPUT_MASK_START) {
-            generate_dungeon();
+            pause_mode = !pause_mode;
         }
 
-        draw_dungeon(box_x, box_y);
 
-        draw_ui();
-        await_drawing();
+        if(pause_mode) {
+            show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y+(32), 10);
+        } else {
+             draw_dungeon(box_x, box_y);
 
-        show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y + MAP_DRAW_WIDTH + 2, 2);
+            draw_ui();
+            await_drawing();
+
+            show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y + MAP_DRAW_WIDTH + 2, 2);
+        }
         await_draw_queue();
 
         await_vsync(1);
