@@ -1,0 +1,43 @@
+- title screen
+
+- game over screen
+
+- return to title after game over screen
+
+- item pickup sounds
+
+- melee attack sounds
+
+- projectile sounds
+
+- wall bump sound
+
+- door open sound
+
+- treasure chests
+
+- spike traps
+
+- cats
+
+- longer music
+
+- game over music
+
+- title music
+
+- shops
+
+- rest/recovery
+
+- xp/levels?
+
+- better enemy behavior than random moves?
+
+- finite number of levels with difficulty curve??
+
+- UI counter for money
+
+- UI counter for dungeon depth
+
+- some sort of purpose for green potions
