@@ -1,4 +1,4 @@
-# Lemmie's Adventure
+# Legacy of the Fiend
 
 Built for the 2025 edition of the 7 Day Roguelike Challenge
 
