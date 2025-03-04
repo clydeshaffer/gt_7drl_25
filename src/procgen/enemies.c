@@ -18,6 +18,9 @@ const char enemy_type_icons[ENEMY_TYPE_COUNT] = {0x50, 0x51, 0x52, 0x53, 0x54, 0
 const char enemy_type_initial_hp[ENEMY_TYPE_COUNT] = { 4, 5, 5, 3, 6, 8 };
 const char enemy_type_attack_modifiers[ENEMY_TYPE_COUNT] = { 0, 0, 1, 0, 2, 5};
 
+char enemy_closest_idx;
+char enemy_closest_dist;
+
 #define ATTACK_TABLE_SIZE 16
 const char enemy_attack_dmg_table[ATTACK_TABLE_SIZE] = { 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3};
 
@@ -69,6 +72,8 @@ char add_enemy(char type, char x, char y) {
 void act_enemies() {
     static char tx, ty, dmg;
     static int tmpidx;
+    enemy_closest_idx = 255;
+    enemy_closest_dist = 255;
     for(enemy_idx = 0; enemy_idx < MAX_ENEMIES; ++enemy_idx) {
         if(enemy_hp[enemy_idx] != 0) {
             tx = enemy_x[enemy_idx];
@@ -103,6 +108,22 @@ void act_enemies() {
                     enemy_y[enemy_idx] = ty;
                     enemy_layer[tmpidx] = enemy_idx+1;
                 }
+            }
+
+            //reusing dmg as tmp distance var
+            if(player_x > enemy_x[enemy_idx])
+                tx = player_x - enemy_x[enemy_idx];
+            else 
+                tx = enemy_x[enemy_idx] - player_x;
+            
+            if(player_y > enemy_y[enemy_idx])
+                ty = player_y - enemy_y[enemy_idx];
+            else 
+                ty = enemy_y[enemy_idx] - player_y;
+            dmg = tx + ty;
+            if(dmg < enemy_closest_dist) {
+                enemy_closest_dist = dmg;
+                enemy_closest_idx = enemy_idx;
             }
         }
     }
