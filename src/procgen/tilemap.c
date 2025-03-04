@@ -29,6 +29,24 @@ char rooms_x1[ROOM_COUNT];
 char rooms_y1[ROOM_COUNT];
 char rooms_x2[ROOM_COUNT];
 char rooms_y2[ROOM_COUNT];
+char room_partition_membership[ROOM_COUNT];
+char room_partition_grouping[ROOM_COUNT];
+char room_group_0_size;
+char room_group_1_size;
+char border_rooms[ROOM_COUNT*2];
+char border_rooms_count;
+
+const char loot_generation_table[] = {
+    0x00, //nothing! you get nothing! you lose!
+    0x61, 0x61, 0x61, 0x61,//some coins
+    0x60, 0x60,//pile of coins
+    0x62, 0x62, 0x62, //red potion
+    0x63, //green potion
+    0x64, 0x64, //blue potion
+    0x66, //sword
+    0x67, //bow
+    0x68 //staff
+};
 
 static char i; //non reentrant shared index var
 
@@ -65,9 +83,10 @@ void randomize_tmp_breaks() {
     }
 }
 
+char do_door = 0;
 void tunnel_between_points(char x1, char y1, char x2, char y2) {
     char x, y, dx, dy, axis;
-    char do_door = 1;
+    
     int ind;
     x = x1;
     y = y1;
@@ -79,7 +98,7 @@ void tunnel_between_points(char x1, char y1, char x2, char y2) {
 
     while((x!=x2) || (y!=y2)) {
         ind = MAPINDEX(y,x);
-        if(do_door && ((rnd()&15)==0) && (tilemap[ind] & 128)) {
+        if(do_door && (tilemap[ind] & 128)) {
             object_layer[ind] = 0x14;
             do_door = 0;
         }
@@ -133,7 +152,7 @@ void setup_dungeon_render() {
 #pragma code-name(push, "PROG0")
 
 void generate_dungeon_impl() {
-    static char r, c;
+    static char r, c, r2, c2;
     static char* tile_cursor;
 
     reset_enemies();
@@ -181,40 +200,106 @@ void generate_dungeon_impl() {
     for(r = 0; r < BREAKS_COUNT+1; ++r) {
         for(c = 0; c < BREAKS_COUNT+1; ++c) {
             carve_room(v_breaks[c], h_breaks[r], v_breaks[c+1], h_breaks[r+1]);
+            room_partition_membership[room_idx] = 0;
             ++room_idx;
         }
     }
+
+
+    r = rnd_range(0, BREAKS_COUNT+1);
+    c = rnd_range(0, BREAKS_COUNT+1);
+    r2 = r;
+    c2 = c;
+    if(r < BREAKS_COUNT) {
+        r2 = rnd_range(r, BREAKS_COUNT+1);
+    }
+    if(c < BREAKS_COUNT) {
+        c2 = rnd_range(c, BREAKS_COUNT+1);
+    }
+
+    room_idx = c;
+    for(i = 0; i < r; ++i) {
+        room_idx += BREAKS_COUNT+1; //somehow this is probably faster than multiplying even though its the same
+    }
+
+    while(r <= r2) {
+        for(i = c; i <= c2; ++i) {
+            room_partition_membership[room_idx] = 1;
+            ++room_idx;
+        }
+        room_idx -= (c2 - c) + 1;
+        room_idx += BREAKS_COUNT+1;
+        ++r;
+    }
+
+    room_group_0_size = 0;
+    room_group_1_size = 0;
+
+
+    for(room_idx = 0; room_idx < ROOM_COUNT; ++room_idx) {
+        if(room_partition_membership[room_idx]) {
+            ++room_group_1_size;
+            room_partition_grouping[ROOM_COUNT-room_group_1_size] = room_idx;
+        } else {
+            room_partition_grouping[room_group_0_size++] = room_idx;
+        }
+    }
+
+    border_rooms_count = 0;
 
     room_idx = 0;
     for(r = 0; r < BREAKS_COUNT+1; ++r) {
         for(c = 0; c < BREAKS_COUNT+1; ++c) {
             if(c != BREAKS_COUNT) {
-                tunnel_between_points(
-                    rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]),
-                    rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),
-                    rnd_range(rooms_x1[room_idx+1], rooms_x2[room_idx+1]),
-                    rnd_range(rooms_y1[room_idx+1], rooms_y2[room_idx+1])
-                );
+                if(room_partition_membership[room_idx] == room_partition_membership[room_idx+1]) {
+                    tunnel_between_points(
+                        rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]),
+                        rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),
+                        rnd_range(rooms_x1[room_idx+1], rooms_x2[room_idx+1]),
+                        rnd_range(rooms_y1[room_idx+1], rooms_y2[room_idx+1])
+                    );
+                } else {
+                    border_rooms[border_rooms_count++] = room_idx;
+                }
             }
             if(r != BREAKS_COUNT) {
-                tunnel_between_points(
-                    rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]),
-                    rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),
-                    rnd_range(rooms_x1[room_idx+1+BREAKS_COUNT], rooms_x2[room_idx+1+BREAKS_COUNT]),
-                    rnd_range(rooms_y1[room_idx+1+BREAKS_COUNT], rooms_y2[room_idx+1+BREAKS_COUNT])
-                );
+                if(room_partition_membership[room_idx] == room_partition_membership[room_idx+1+BREAKS_COUNT]) {
+                    tunnel_between_points(
+                        rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]),
+                        rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),
+                        rnd_range(rooms_x1[room_idx+1+BREAKS_COUNT], rooms_x2[room_idx+1+BREAKS_COUNT]),
+                        rnd_range(rooms_y1[room_idx+1+BREAKS_COUNT], rooms_y2[room_idx+1+BREAKS_COUNT])
+                    );
+                } else {
+                    border_rooms[border_rooms_count++] = room_idx | 128;
+                }
             }
             ++room_idx;
         }
     }
 
+    if(border_rooms_count) {
+        room_idx = border_rooms[rnd_range(0, border_rooms_count)];
+        c = 0;
+        if(room_idx & 128) c = BREAKS_COUNT;
+        do_door = 1;
+        room_idx &= 127;
+        tunnel_between_points(
+            rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]),
+            rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),
+            rnd_range(rooms_x1[room_idx+1+c], rooms_x2[room_idx+1+c]),
+            rnd_range(rooms_y1[room_idx+1+c], rooms_y2[room_idx+1+c])
+        );
+    }
+
     for(room_idx = 1; room_idx < ROOM_COUNT; ++room_idx) {
-        if((rnd() & 3) == 0) c = 0x60 + rnd_range(0,9);
+        if((rnd() & 3) == 0) c = loot_generation_table[rnd_range(0, sizeof(loot_generation_table))];
         else c = 0x50 + rnd_range(0, 6);
 
         object_layer[MAPINDEX(rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]))] = c;
+
         if((rnd() & 3) == 0) {
-            if((rnd() & 3) == 0) c = 0x60 + rnd_range(0,9);
+            if((rnd() & 3) == 0) c = loot_generation_table[rnd_range(0, sizeof(loot_generation_table))];
             else c = 0x50 + rnd_range(0, 6);
             object_layer[MAPINDEX(rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]))] = c;
         }
@@ -231,15 +316,37 @@ void generate_dungeon_impl() {
         }
     }
 
-    room_idx = rnd_range(0, ROOM_COUNT);
+    if(room_group_0_size) {
+        room_idx = room_partition_grouping[rnd_range(0, room_group_0_size)];
+        c = rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]);
+        r = rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]);
+        object_layer[MAPINDEX(r, c)] = 0x65;
+
+
+        r =  room_idx;
+        while(room_idx == r) {
+            //dont put key and player start in same room to make sure player doesn't overwrite key
+            room_idx = room_partition_grouping[rnd_range(0, room_group_0_size)];
+        }
+    } else {
+        room_idx = rnd_range(0, ROOM_COUNT);
+    }
+    
+    player_x = rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]);
+    player_y = rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]);
+
+    object_layer[MAPINDEX(player_y, player_x)] = 0x40;
+
+    r = enemy_layer[MAPINDEX(player_y, player_x)];
+    if(r) {
+        enemy_hp[r-1] = 0;
+        enemy_layer[MAPINDEX(player_y, player_x)] = 0;
+    }
+    
+    room_idx = room_partition_grouping[rnd_range(ROOM_COUNT - room_group_1_size, ROOM_COUNT)];
     c = rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]);
     r = rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]);
     object_layer[MAPINDEX(r, c)] = 0x10;
-
-    room_idx = rnd_range(0, ROOM_COUNT);
-    player_x = rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]);
-    player_y = rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]);
-    object_layer[MAPINDEX(player_y, player_x)] = 0x40;
 
     tile_cursor = tilemap;
     for(r = 0; r < MAP_WIDTH; ++r) {
