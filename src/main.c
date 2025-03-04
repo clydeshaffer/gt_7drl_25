@@ -34,7 +34,7 @@ char reticle_x;
 char reticle_y;
 
 const char weapon_modifiers[] = {0, 3, 0, 1, 0};
-const char ranged_modifiers[] = {0, 0, 1, 5, 0};
+const char ranged_modifiers[] = {0, 0, 0, 5, 0};
 
 const char pickable_names[] = {
     WORDS_TAG_GOLD_PILE_START,
