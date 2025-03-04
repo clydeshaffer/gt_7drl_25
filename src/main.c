@@ -9,6 +9,8 @@
 #include "gen/assets/asset_main.h"
 #include "gt/audio/music.h"
 #include "linescan.h"
+#include "titlescreen.h"
+#include "gt/feature/random/random.h"
 
 char box_x = 0, box_y = 0;
 char old_x = 1, old_y = 1;
@@ -27,7 +29,10 @@ char do_generation_next_frame;
 
 char auto_tick_music = 0;
 
-char pause_mode = 0;
+#define PAUSE_MODE_NONE 0
+#define PAUSE_MODE_LOG 1
+#define PAUSE_MODE_TITLE 2
+char pause_mode = PAUSE_MODE_TITLE;
 
 char reticle_enabled = 0;
 char reticle_x;
@@ -148,26 +153,37 @@ int main () {
     
     do_generation_next_frame = 0;
 
+    init_titlescreen();
     setup_dungeon_render();
     prepare_log_text();
 
-    init_player();
-
-    play_song(ASSET__asset_main__song1_mid, REPEAT_LOOP);
+    
     auto_tick_music = 1;
     
-    push_log(WORDS_TAG_GENERATING_START, 255, 255);
-    show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y + MAP_DRAW_WIDTH + 2, 2);
-    await_draw_queue();
+    while (1) {
 
-    await_vsync(1);
-    flip_pages();
+        while(pause_mode == PAUSE_MODE_TITLE) {
+            update_inputs();
+            draw_titlescreen();
+            rnd();
+            await_draw_queue();
+            await_vsync(1);
+            flip_pages();
 
-    generate_dungeon();
+            if(player1_new_buttons & INPUT_MASK_START) {
+                pause_mode = 0;
+                init_player();
+                play_song(ASSET__asset_main__song1_mid, REPEAT_LOOP);
+                push_log(WORDS_TAG_GENERATING_START, 255, 255);
+                show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y + MAP_DRAW_WIDTH + 2, 2);
+                await_draw_queue();
+                await_vsync(1);
+                flip_pages();
+                generate_dungeon();
+                push_log(WORDS_TAG_WELCOME_START, WORDS_TAG_DUNGEON_START, 255);
 
-    push_log(WORDS_TAG_WELCOME_START, WORDS_TAG_DUNGEON_START, 255);
-
-    while (1) {                                     //  Run forever
+            }
+        }
 
         if(do_generation_next_frame) {
             generate_dungeon();
@@ -374,10 +390,10 @@ int main () {
         }
 
 
-        if(pause_mode) {
+        if(pause_mode == PAUSE_MODE_LOG) {
             show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y+(32), 10);
-        } else {
-             draw_dungeon(box_x, box_y);
+        } else if(pause_mode == PAUSE_MODE_NONE) {
+            draw_dungeon(box_x, box_y);
 
             draw_ui();
             await_drawing();
