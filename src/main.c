@@ -8,6 +8,7 @@
 #include "gen/assets/asset_main/words.json.h"
 #include "gen/assets/asset_main.h"
 #include "gt/audio/music.h"
+#include "linescan.h"
 
 char box_x = 0, box_y = 0;
 char old_x = 1, old_y = 1;
@@ -293,7 +294,7 @@ int main () {
                             //What does the green potion even do
                             break;
                         case 0x64:
-                            ++player_mp;
+                            player_mp += 3;
                             break;
                     }
                     if(stood_object) {
@@ -314,18 +315,29 @@ int main () {
         } else if(player1_new_buttons & INPUT_MASK_C) {
             if(reticle_enabled) {
                 reticle_enabled = 0;
+                if(player_icon == 0x43) {
+                    --player_mp;
+                    projectile_sprite = 0x80;
+                } else {
+                    projectile_sprite = 0x70;
+                }
+                scan_line(player_x, player_y, reticle_x, reticle_y);
+
             } else {
                 if((player_icon & 254) == 0x42 ) {
-                    reticle_enabled = 1;
-
-                    if(enemy_closest_dist < 10) {
-                        reticle_x = enemy_x[enemy_closest_idx];
-                        reticle_y = enemy_y[enemy_closest_idx];
+                    if((player_icon == 0x43) && (player_mp == 0)) {
+                        push_log(WORDS_TAG_NO_MANA_START, 255, 255);
                     } else {
-                        reticle_x = player_x+1;
-                        reticle_y = player_y;
+                        reticle_enabled = 1;
+
+                        if(enemy_closest_dist < 10) {
+                            reticle_x = enemy_x[enemy_closest_idx];
+                            reticle_y = enemy_y[enemy_closest_idx];
+                        } else {
+                            reticle_x = player_x+1;
+                            reticle_y = player_y;
+                        }
                     }
-                    
                 } else {
                     push_log(WORDS_TAG_NO_RANGED_START, 255, 255);
                 }
