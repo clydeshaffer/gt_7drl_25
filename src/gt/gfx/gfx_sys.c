@@ -38,6 +38,6 @@ void await_drawing() {
     asm ("CLI");
     while (draw_busy)
     {
-        wait();
+        //wait();
     }
 }
