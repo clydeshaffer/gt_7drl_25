@@ -28,6 +28,10 @@ char auto_tick_music = 0;
 
 char pause_mode = 0;
 
+char reticle_enabled = 0;
+char reticle_x;
+char reticle_y;
+
 const char weapon_modifiers[] = {0, 3, 0, 1, 0};
 
 const char pickable_names[] = {
@@ -92,6 +96,25 @@ void draw_ui() {
         DIRECT_SET_HEIGHT(key_count << 3);
         DIRECT_DRAW_START();
     }
+
+    if(reticle_enabled) {
+
+        if(reticle_x & 128) return;
+        if(reticle_x < box_x) return;
+        if(reticle_x >= (box_x + MAP_DRAW_TILES)) return;
+        if(reticle_y & 128) return;
+        if(reticle_y < box_y) return;
+        if(reticle_y >= (box_y + MAP_DRAW_TILES)) return;
+
+        await_drawing();
+        DIRECT_SET_SOURCE_X(16);
+        DIRECT_SET_SOURCE_Y(112);
+        DIRECT_SET_WIDTH(8);
+        DIRECT_SET_HEIGHT(8);
+        DIRECT_SET_DEST_X(((reticle_x - box_x) << 3) + MAP_DRAW_OFFSET_X);
+        DIRECT_SET_DEST_Y(((reticle_y - box_y) << 3) + MAP_DRAW_OFFSET_Y);
+        DIRECT_DRAW_START();
+    }
 }
 
 int init_player() {
@@ -143,7 +166,7 @@ int main () {
         stood_object_previous = stood_object;
         stood_object = 0;
 
-        if(!pause_mode) {
+        if(!pause_mode && !reticle_enabled) {
             if(player_hp) {
                 if(player1_new_buttons & INPUT_MASK_ANY_DIRECTION) {
                     did_move = 1;
@@ -215,6 +238,20 @@ int main () {
             }
         }
 
+        if(reticle_enabled) {
+            if(player1_new_buttons & INPUT_MASK_LEFT) --reticle_x;
+            else if(player1_new_buttons & INPUT_MASK_RIGHT) ++reticle_x;
+            else if(player1_new_buttons & INPUT_MASK_UP) --reticle_y;
+            else if(player1_new_buttons & INPUT_MASK_DOWN) ++reticle_y;
+
+            if(reticle_x & 128) reticle_x = 0;
+            if(reticle_x < box_x) ++reticle_x;
+            if(reticle_x >= (box_x + MAP_DRAW_TILES)) --reticle_x;
+            if(reticle_y & 128) reticle_y = 0;
+            if(reticle_y < box_y) ++reticle_y;
+            if(reticle_y >= (box_y + MAP_DRAW_TILES)) --reticle_y;
+        }
+
         if(did_move) {
             object_layer[MAPINDEX(old_y, old_x)] = stood_object_previous;
         } else {
@@ -272,6 +309,25 @@ int main () {
                     } else if(hit_obj == 0x11) {
                         push_log(WORDS_TAG_UNSEEN_FORCE_START, WORDS_TAG_PREVENTS_RETREAT_START, 255);
                     }
+                }
+            }
+        } else if(player1_new_buttons & INPUT_MASK_C) {
+            if(reticle_enabled) {
+                reticle_enabled = 0;
+            } else {
+                if((player_icon & 254) == 0x42 ) {
+                    reticle_enabled = 1;
+
+                    if(enemy_closest_dist < 10) {
+                        reticle_x = enemy_x[enemy_closest_idx];
+                        reticle_y = enemy_y[enemy_closest_idx];
+                    } else {
+                        reticle_x = player_x+1;
+                        reticle_y = player_y;
+                    }
+                    
+                } else {
+                    push_log(WORDS_TAG_NO_RANGED_START, 255, 255);
                 }
             }
         }
