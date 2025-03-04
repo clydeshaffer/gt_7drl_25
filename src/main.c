@@ -34,6 +34,7 @@ char reticle_x;
 char reticle_y;
 
 const char weapon_modifiers[] = {0, 3, 0, 1, 0};
+const char ranged_modifiers[] = {0, 0, 1, 5, 0};
 
 const char pickable_names[] = {
     WORDS_TAG_GOLD_PILE_START,
@@ -118,6 +119,21 @@ void draw_ui() {
     }
 }
 
+void roll_attack(char mod) {
+    dmg_rolled = roll_damage(mod);
+    
+    enemy_hp[hit_obj] -= dmg_rolled;
+    if(enemy_hp[hit_obj] & 128) {
+        enemy_hp[hit_obj] = 0;
+    }
+
+    if(!enemy_hp[hit_obj]) {
+        dmg_rolled = WORDS_TAG_SLEW_START;
+        enemy_layer[MAPINDEX(enemy_y[hit_obj], enemy_x[hit_obj])] = 0;
+    }
+    push_log(dmg_rolled, enemy_type_name[enemy_types[hit_obj]], 255);
+}
+
 int init_player() {
     player_icon = 0x40;
     key_count = 0;
@@ -185,18 +201,7 @@ int main () {
                     if (hit_obj) { //Bumped Enemy
                         --hit_obj;
 
-                        dmg_rolled = roll_damage(weapon_modifiers[player_icon & 0x0F]);
-                        
-                        enemy_hp[hit_obj] -= dmg_rolled;
-                        if(enemy_hp[hit_obj] & 128) {
-                            enemy_hp[hit_obj] = 0;
-                        }
-
-                        if(!enemy_hp[hit_obj]) {
-                            dmg_rolled = WORDS_TAG_SLEW_START;
-                            enemy_layer[tile_idx] = 0;
-                        }
-                        push_log(dmg_rolled, enemy_type_name[enemy_types[hit_obj]], 255);
+                        roll_attack(weapon_modifiers[player_icon & 0x0F]);
 
                         player_x = old_x;
                         player_y = old_y;
@@ -318,11 +323,17 @@ int main () {
                 if(player_icon == 0x43) {
                     --player_mp;
                     projectile_sprite = 0x80;
+                    push_log(WORDS_TAG_YOU_START, WORDS_TAG_CAST_SPELL_START, 255);
                 } else {
                     projectile_sprite = 0x70;
+                    push_log(WORDS_TAG_YOU_START, WORDS_TAG_SHOT_ARROW_START, 255);
                 }
-                scan_line(player_x, player_y, reticle_x, reticle_y);
-
+                hit_obj = scan_line(player_x, player_y, reticle_x, reticle_y);
+                if(hit_obj) {
+                    --hit_obj;
+                    roll_attack(ranged_modifiers[player_icon & 0x0F]);
+                }
+                act_enemies();
             } else {
                 if((player_icon & 254) == 0x42 ) {
                     if((player_icon == 0x43) && (player_mp == 0)) {
@@ -341,6 +352,10 @@ int main () {
                 } else {
                     push_log(WORDS_TAG_NO_RANGED_START, 255, 255);
                 }
+            }
+        } else if(player1_new_buttons & INPUT_MASK_B) {
+            if(reticle_enabled) {
+                reticle_enabled = 0;
             }
         }
 

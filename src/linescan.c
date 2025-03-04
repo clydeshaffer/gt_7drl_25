@@ -30,10 +30,11 @@ void draw_projectile(char x, char y) {
 }
 
 //adapted from https://gist.github.com/bert/1085538
-void scan_line (signed char x0, signed char y0, signed char x1, signed char y1) {
+char scan_line (signed char x0, signed char y0, signed char x1, signed char y1) {
     signed char dx =  scabs (x1 - x0), sx = x0 < x1 ? 1 : -1;
     signed char dy = -scabs (y1 - y0), sy = y0 < y1 ? 1 : -1; 
     signed char err = dx + dy, e2; /* error value e_xy */
+    char hit;
 
     if(dx > -dy) {
         if(sx == -1) projectile_sprite += 1;
@@ -43,6 +44,15 @@ void scan_line (signed char x0, signed char y0, signed char x1, signed char y1) 
     }
 
     for (;;){  /* loop */
+
+        if(tilemap[MAPINDEX(y0, x0)] & 128) {
+            return 0;
+        }
+
+        hit = enemy_layer[MAPINDEX(y0, x0)];
+        if(hit) {
+            return hit;
+        }
 
         draw_dungeon(box_x, box_y);
         draw_projectile(x0, y0);
@@ -54,4 +64,5 @@ void scan_line (signed char x0, signed char y0, signed char x1, signed char y1) 
         if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
         if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
     }
+    return 0;
 }

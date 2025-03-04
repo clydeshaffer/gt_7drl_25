@@ -3,6 +3,6 @@
 
 extern char projectile_sprite;
 
-void scan_line (signed char x0, signed char y0, signed char x1, signed char y1);
+char scan_line (signed char x0, signed char y0, signed char x1, signed char y1);
 
 #endif
