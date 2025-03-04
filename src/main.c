@@ -250,7 +250,7 @@ int main () {
                             ++key_count;
                             break;
                         case 0x62:
-                            ++player_hp;
+                            player_hp += 3;
                             break;
                         case 0x63:
                             //What does the green potion even do
