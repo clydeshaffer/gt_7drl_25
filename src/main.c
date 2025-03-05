@@ -196,6 +196,7 @@ int main () {
             if(player1_new_buttons & INPUT_MASK_START) {
                 pause_mode = 0;
                 init_player();
+                reset_floor_number();
                 play_song(ASSET__asset_main__song1_mid, REPEAT_LOOP);
                 push_log(255, 255, 255);
                 push_log(WORDS_TAG_GENERATING_START, 255, 255);
@@ -211,6 +212,7 @@ int main () {
 
         if(do_generation_next_frame) {
             generate_dungeon();
+            push_log_num(WORDS_TAG_DEPTH_START, WORDS_TAG_DIGITS_START + floor_tens, WORDS_TAG_DIGITS_START + floor_ones);
             object_layer[MAPINDEX(player_y, player_x)] = player_icon;
             do_generation_next_frame = 0;
         }
@@ -373,6 +375,7 @@ int main () {
                     object_layer[MAPINDEX(player_y, player_x)] = player_icon;
                 } else if((hit_obj & 0xF0) == 0x10) {
                     if(hit_obj == 0x10) {
+                        inc_floor_number();
                         do_generation_next_frame = 1;
                         push_log(WORDS_TAG_GENERATING_START, 255, 255);
                         stood_object = 0x11;

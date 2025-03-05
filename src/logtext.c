@@ -29,11 +29,7 @@ void prepare_log_text() {
     last_log_count = 0;
 }
 
-void push_log(char partA, char partB, char partC) {
-    log_chunk_buf[log_tail++] = partA;
-    log_chunk_buf[log_tail++] = partB;
-    log_chunk_buf[log_tail++] = partC;
-    log_chunk_buf[log_tail++] = 255;
+void log_increment_queue() {
     if(log_tail >= LOG_BUF_SIZE) log_tail -= LOG_BUF_SIZE;
     if(log_count < LOG_MAX_LINES) {
         ++log_count;
@@ -42,6 +38,24 @@ void push_log(char partA, char partB, char partC) {
         if(log_head >= LOG_BUF_SIZE) log_head -= LOG_BUF_SIZE;
     }
     log_dirty = 2;
+}
+
+void push_log_num(char partA, char partB, char partC) {
+    log_chunk_buf[log_tail++] = partA;
+    log_chunk_buf[log_tail++] = partB;
+    log_chunk_buf[log_tail++] = LOG_DIGIT_ANTISPACE;
+    log_chunk_buf[log_tail++] = partC;
+
+    log_increment_queue();
+}
+
+void push_log(char partA, char partB, char partC) {
+    log_chunk_buf[log_tail++] = partA;
+    log_chunk_buf[log_tail++] = partB;
+    log_chunk_buf[log_tail++] = partC;
+    log_chunk_buf[log_tail++] = 255;
+    
+    log_increment_queue();
 }
 
 void show_logs(char x, char y, char count) {
@@ -60,9 +74,12 @@ void show_logs(char x, char y, char count) {
     while(count > 0) {
         tx = x;
         for(tok = 0; tok < 4; ++tok) {
-            if(log_chunk_buf[i] != 255) {
+            if(log_chunk_buf[i] < WORDS_SHEET_FRAMES) {
                 queue_draw_sprite_frame(text_sheet, tx, ty, log_chunk_buf[i], 0);
                 tx += sprite_temp_frame.w + 4;
+            }
+            if(log_chunk_buf[i] == LOG_DIGIT_ANTISPACE) {
+                tx -= 3;
             }
             ++i;
         }

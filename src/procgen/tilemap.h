@@ -24,4 +24,11 @@ void generate_dungeon();
 
 void draw_dungeon(char x, char y);
 
+extern char floor_num;
+extern char floor_tens;
+extern char floor_ones;
+
+void reset_floor_number();
+void inc_floor_number();
+
 #endif

@@ -63,6 +63,25 @@ const char enemy_spawn_table[] = {
 
 static char i; //non reentrant shared index var
 
+char floor_num;
+char floor_tens;
+char floor_ones ;
+
+void reset_floor_number() {
+    floor_num = 1;
+    floor_tens = 0;
+    floor_ones = 1;
+}
+
+void inc_floor_number() {
+    ++floor_num;
+    ++floor_ones;
+    if(floor_ones == 10) {
+        floor_ones = 0;
+        ++floor_tens;
+    }
+}
+
 void flash_background() {
     background_color_index = sizeof(background_color_table) - 1;
 }

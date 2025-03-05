@@ -17,5 +17,3 @@
 - finite number of levels with difficulty curve??
 
 - UI counter for money
-
-- UI counter for dungeon depth

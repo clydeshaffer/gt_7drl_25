@@ -18,6 +18,8 @@ typedef struct music_state_t {
 
 #define MUSIC_STACK_SIZE 8
 
+char old_auto_state;
+
 music_state_t music_state;
 music_state_t music_stack[MUSIC_STACK_SIZE];
 unsigned char music_stack_idx = 0;
@@ -204,9 +206,13 @@ void unpause_music() {
     pop_song_stack();
 }
 
+extern char auto_tick_music;
+
 void tick_music() {
     static unsigned char n, noteMask, ch;
     register unsigned char a, op;
+    old_auto_state = auto_tick_music;
+    auto_tick_music = 0;
     push_rom_bank();
     for(n = 0; n < NUM_FM_CHANNELS; ++n) {
         if(sound_effect_length[n]) {
@@ -335,6 +341,7 @@ void tick_music() {
 
     flush_audio_params();
     pop_rom_bank();
+    auto_tick_music = old_auto_state;
 }
 
 void silence_all_channels() {
