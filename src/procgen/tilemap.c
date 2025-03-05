@@ -36,6 +36,9 @@ char room_group_1_size;
 char border_rooms[ROOM_COUNT*2];
 char border_rooms_count;
 
+char background_color_index = 0;
+const char background_color_table[] = { 64, 72, 80, 88, 89, 90 };
+
 const char loot_generation_table[] = {
     0x00, //nothing! you get nothing! you lose!
     0x61, 0x61, 0x61, 0x61,//some coins
@@ -49,6 +52,16 @@ const char loot_generation_table[] = {
 };
 
 static char i; //non reentrant shared index var
+
+void flash_background() {
+    background_color_index = sizeof(background_color_table) - 1;
+}
+
+void setup_dungeon_render() {
+    dungeon_gfx = allocate_sprite(&ASSET__asset_main__tiles_bmp_load_list);
+}
+
+#pragma code-name(push, "PROG0")
 
 char get_tile_check_bounds_slow(char x, char y) {
     if(x >= MAP_WIDTH) return 128;
@@ -144,12 +157,6 @@ void carve_room(char x1, char y1, char x2, char y2) {
         }
     }
 }
-
-void setup_dungeon_render() {
-    dungeon_gfx = allocate_sprite(&ASSET__asset_main__tiles_bmp_load_list);
-}
-
-#pragma code-name(push, "PROG0")
 
 void generate_dungeon_impl() {
     static char r, c, r2, c2;
@@ -398,7 +405,10 @@ void draw_dungeon(char x, char y) {
     DIRECT_SET_SOURCE_Y(0);
     DIRECT_SET_WIDTH(TILE_WIDTH);
     DIRECT_SET_HEIGHT(TILE_WIDTH);
-    DIRECT_SET_COLOR(0);
+    DIRECT_SET_COLOR(background_color_table[background_color_index]);
+    if(background_color_index) {
+        --background_color_index;
+    }
     for(r = 0; r < MAP_DRAW_WIDTH; r+=TILE_WIDTH) {
         DIRECT_SET_DEST_Y(r+MAP_DRAW_OFFSET_Y);
         for(c = 0; c < MAP_DRAW_WIDTH; c+=TILE_WIDTH) {

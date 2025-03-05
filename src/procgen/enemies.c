@@ -1,9 +1,11 @@
 #include "enemies.h"
 #include "tilemap.h"
 #include "../gt/feature/random/random.h"
+#include "../gt/audio/music.h"
 
 #include "../logtext.h"
 #include "../gen/assets/asset_main/words.json.h"
+#include "../gen/assets/asset_main.h"
 
 char enemy_types[MAX_ENEMIES];
 char enemy_icons[MAX_ENEMIES];
@@ -98,6 +100,12 @@ void act_enemies() {
                     dmg = roll_damage(enemy_type_attack_modifiers[enemy_types[enemy_idx]]);
                     player_hp -= dmg;
                     if(player_hp & 128) player_hp = 0;
+
+                    if(dmg) {
+                        flash_background();
+                        play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
+                    }
+
                     if(player_hp == 0) {
                         dmg = WORDS_TAG_SLAIN_START;
                     }

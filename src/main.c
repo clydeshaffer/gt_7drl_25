@@ -53,6 +53,17 @@ const char pickable_names[] = {
     WORDS_TAG_STAFF_START
 };
 
+const char pickable_sounds[] = {
+   ASSET__asset_main__coin_sfx_ID,
+   ASSET__asset_main__coin_sfx_ID,
+   ASSET__asset_main__drink_sfx_ID,
+   ASSET__asset_main__drink_sfx_ID,
+   ASSET__asset_main__drink_sfx_ID,
+   ASSET__asset_main__key_sfx_ID,
+   ASSET__asset_main__key_sfx_ID,
+   ASSET__asset_main__key_sfx_ID
+};
+
 const char floorobj_names[] = {
     WORDS_TAG_STAIRS_DOWN_START,
     WORDS_TAG_STAIRS_UP_START,
@@ -135,6 +146,10 @@ void roll_attack(char mod) {
     if(!enemy_hp[hit_obj]) {
         dmg_rolled = WORDS_TAG_SLEW_START;
         enemy_layer[MAPINDEX(enemy_y[hit_obj], enemy_x[hit_obj])] = 0;
+        play_sound_effect(ASSET__asset_main__pain1_sfx_ID, 2);
+    } else {
+        if(dmg_rolled)
+            play_sound_effect(ASSET__asset_main__impact_sfx_ID, 2);
     }
     push_log(dmg_rolled, enemy_type_name[enemy_types[hit_obj]], 255);
 }
@@ -174,6 +189,7 @@ int main () {
                 pause_mode = 0;
                 init_player();
                 play_song(ASSET__asset_main__song1_mid, REPEAT_LOOP);
+                push_log(255, 255, 255);
                 push_log(WORDS_TAG_GENERATING_START, 255, 255);
                 show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y + MAP_DRAW_WIDTH + 2, 2);
                 await_draw_queue();
@@ -227,6 +243,7 @@ int main () {
                         //then removes itself and the wall piece after unlocking
                         if((object_layer[tile_idx] == 0x14) && key_count) {
                             --key_count;
+                            play_sound_effect(ASSET__asset_main__unlock_sfx_ID, 2);
                             tilemap[tile_idx] = 0;
                             push_log(WORDS_TAG_UNLOCKED_START, WORDS_TAG_DOOR_START, 255);
                         } else {
@@ -255,8 +272,16 @@ int main () {
                     act_enemies();
                 }
             } else {
-                player_icon = 0x44;
-                object_layer[MAPINDEX(player_y, player_x)] = player_icon;
+                if(player_icon != 0x44) {
+                    player_icon = 0x44;
+                    object_layer[MAPINDEX(player_y, player_x)] = player_icon;
+                    push_log(WORDS_TAG_PRESS_A_START, WORDS_TAG_RETURN_TO_TITLE_START, 255);
+                    play_song(ASSET__asset_main__rip_mid, REPEAT_NONE);
+                }
+                if(player1_new_buttons & INPUT_MASK_A) {
+                    pause_mode = PAUSE_MODE_TITLE;
+                    stop_music();
+                }
             }
         }
 
@@ -321,6 +346,7 @@ int main () {
                     if(stood_object) {
                         push_log(WORDS_TAG_DROPPED_START, pickable_names[stood_object & 0xF], 255);
                     }
+                    play_sound_effect(pickable_sounds[hit_obj & 0xF],2);
                     push_log(WORDS_TAG_PICKED_UP_START, pickable_names[hit_obj & 0xF], 255);
                     object_layer[MAPINDEX(player_y, player_x)] = player_icon;
                 } else if((hit_obj & 0xF0) == 0x10) {
@@ -340,10 +366,13 @@ int main () {
                     --player_mp;
                     projectile_sprite = 0x80;
                     push_log(WORDS_TAG_YOU_START, WORDS_TAG_CAST_SPELL_START, 255);
+                    play_sound_effect(ASSET__asset_main__spell_sfx_ID, 2);
                 } else {
                     projectile_sprite = 0x70;
                     push_log(WORDS_TAG_YOU_START, WORDS_TAG_SHOT_ARROW_START, 255);
+                    play_sound_effect(ASSET__asset_main__arrow_sfx_ID, 2);
                 }
+                
                 hit_obj = scan_line(player_x, player_y, reticle_x, reticle_y);
                 if(hit_obj) {
                     --hit_obj;

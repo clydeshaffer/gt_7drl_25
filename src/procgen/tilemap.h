@@ -16,6 +16,8 @@ extern char enemy_layer[MAP_WIDTH * MAP_WIDTH];
 extern char player_x;
 extern char player_y;
 
+void flash_background();
+
 void setup_dungeon_render();
 
 void generate_dungeon();
