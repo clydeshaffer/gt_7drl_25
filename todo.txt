@@ -2,8 +2,6 @@
 
 - treasure chests
 
-- spike traps
-
 - cats
 
 - longer music

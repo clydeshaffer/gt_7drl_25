@@ -51,6 +51,16 @@ const char loot_generation_table[] = {
     0x68 //staff
 };
 
+const char enemy_spawn_table[] = {
+    0x50, 0x50, 0x50, 0x50,//beetle
+    0x51, 0x51, 0x51, 0x51,//goblin
+    0x52, 0x52, 0x52, //zombie
+    0x53, 0x52, //ghost
+    0x54, 0x54, //naga
+    0x55, //ogre
+    0x12, 0x12 //spike pit
+};
+
 static char i; //non reentrant shared index var
 
 void flash_background() {
@@ -301,13 +311,13 @@ void generate_dungeon_impl() {
 
     for(room_idx = 1; room_idx < ROOM_COUNT; ++room_idx) {
         if((rnd() & 3) == 0) c = loot_generation_table[rnd_range(0, sizeof(loot_generation_table))];
-        else c = 0x50 + rnd_range(0, 6);
+        else c = enemy_spawn_table[rnd_range(0, sizeof(enemy_spawn_table))];
 
         object_layer[MAPINDEX(rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]))] = c;
 
         if((rnd() & 3) == 0) {
             if((rnd() & 3) == 0) c = loot_generation_table[rnd_range(0, sizeof(loot_generation_table))];
-            else c = 0x50 + rnd_range(0, 6);
+            else c = enemy_spawn_table[rnd_range(0, sizeof(enemy_spawn_table))];
             object_layer[MAPINDEX(rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]))] = c;
         }
     }
