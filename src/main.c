@@ -11,6 +11,7 @@
 #include "linescan.h"
 #include "titlescreen.h"
 #include "gt/feature/random/random.h"
+#include "buffs.h"
 
 char box_x = 0, box_y = 0;
 char old_x = 1, old_y = 1;
@@ -38,8 +39,8 @@ char reticle_enabled = 0;
 char reticle_x;
 char reticle_y;
 
-const char weapon_modifiers[] = {0, 3, 0, 1, 0};
-const char ranged_modifiers[] = {0, 0, 0, 5, 0};
+const char weapon_modifiers[] = {0, 4, 0, 1, 0};
+const char ranged_modifiers[] = {0, 0, 1, 6, 0};
 
 const char pickable_names[] = {
     WORDS_TAG_GOLD_PILE_START,
@@ -59,6 +60,7 @@ const char pickable_sounds[] = {
    ASSET__asset_main__drink_sfx_ID,
    ASSET__asset_main__drink_sfx_ID,
    ASSET__asset_main__drink_sfx_ID,
+   ASSET__asset_main__key_sfx_ID,
    ASSET__asset_main__key_sfx_ID,
    ASSET__asset_main__key_sfx_ID,
    ASSET__asset_main__key_sfx_ID
@@ -91,6 +93,9 @@ void draw_ui() {
     DIRECT_SET_WIDTH(4);
     DIRECT_SET_DEST_X(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH+2);
     if(player_hp) {
+        if(buff_type == BUFF_GUARD) {
+            DIRECT_SET_SOURCE_X(24);
+        }
         DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_hp << 2));
         DIRECT_SET_HEIGHT(player_hp << 2);
     
@@ -136,6 +141,9 @@ void draw_ui() {
 }
 
 void roll_attack(char mod) {
+
+    if(buff_type == BUFF_STRENGTH) mod += 3;
+
     dmg_rolled = roll_damage(mod);
     
     enemy_hp[hit_obj] -= dmg_rolled;
@@ -346,7 +354,7 @@ int main () {
                             player_hp += 3;
                             break;
                         case 0x63:
-                            //What does the green potion even do
+                            set_buff(rnd_range(1, BUFF_TYPE_COUNT));
                             break;
                         case 0x64:
                             player_mp += 3;

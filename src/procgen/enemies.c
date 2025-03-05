@@ -4,6 +4,7 @@
 #include "../gt/audio/music.h"
 
 #include "../logtext.h"
+#include "../buffs.h"
 #include "../gen/assets/asset_main/words.json.h"
 #include "../gen/assets/asset_main.h"
 
@@ -22,6 +23,7 @@ const char enemy_type_attack_modifiers[ENEMY_TYPE_COUNT] = { 0, 0, 1, 0, 2, 5};
 
 char enemy_closest_idx;
 char enemy_closest_dist;
+char action_counter;
 
 #define ATTACK_TABLE_SIZE 16
 const char enemy_attack_dmg_table[ATTACK_TABLE_SIZE] = { 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3};
@@ -44,6 +46,7 @@ char roll_damage(char mod) {
 }
 
 void reset_enemies() {
+    action_counter = 0;
     enemy_count = 0;
     for(enemy_idx = 0; enemy_idx < MAX_ENEMIES; ++enemy_idx) {
         enemy_hp[enemy_idx] = 0;
@@ -74,47 +77,63 @@ char add_enemy(char type, char x, char y) {
 void act_enemies() {
     static char tx, ty, dmg;
     static int tmpidx;
+    ++action_counter;
+
+    tick_buff();
+
     enemy_closest_idx = 255;
     enemy_closest_dist = 255;
     for(enemy_idx = 0; enemy_idx < MAX_ENEMIES; ++enemy_idx) {
         if(enemy_hp[enemy_idx] != 0) {
-            tx = enemy_x[enemy_idx];
-            ty = enemy_y[enemy_idx];
-            switch(rnd_range(0, 4)) {
-                case 0:
-                    ++tx;
-                    break;
-                case 1:
-                    --tx;
-                    break;
-                case 2:
-                    ++ty;
-                    break;
-                case 3:
-                    --ty;
-                    break;
-            }
-            tmpidx = MAPINDEX(ty, tx);
-            if(!(tilemap[tmpidx] & 128) && !(enemy_layer[tmpidx])) {
-                if((object_layer[tmpidx] & 0xF0) == 0x40) {
-                    dmg = roll_damage(enemy_type_attack_modifiers[enemy_types[enemy_idx]]);
-                    player_hp -= dmg;
-                    if(player_hp & 128) player_hp = 0;
+            //If player is speed buffed, skip every other enemy turn
+            //but still compute closest enemy
+            if((buff_type != BUFF_SPEED) || (action_counter & 1)) {
+                tx = enemy_x[enemy_idx];
+                ty = enemy_y[enemy_idx];
+                switch(rnd_range(0, 4)) {
+                    case 0:
+                        ++tx;
+                        break;
+                    case 1:
+                        --tx;
+                        break;
+                    case 2:
+                        ++ty;
+                        break;
+                    case 3:
+                        --ty;
+                        break;
+                }
+                tmpidx = MAPINDEX(ty, tx);
+                if(!(tilemap[tmpidx] & 128) && !(enemy_layer[tmpidx])) {
+                    if((object_layer[tmpidx] & 0xF0) == 0x40) {
+                        dmg = roll_damage(enemy_type_attack_modifiers[enemy_types[enemy_idx]]);
+                        player_hp -= dmg;
+                        if(player_hp & 128) player_hp = 0;
 
-                    if(dmg) {
-                        flash_background();
-                        play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
-                    }
+                        if(dmg) {
+                            if(buff_type == BUFF_GUARD) {
+                                player_hp += dmg;
+                                push_log(WORDS_TAG_BLOCKED_START, enemy_type_name[enemy_types[enemy_idx]], 255);
+                                play_sound_effect(ASSET__asset_main__spell_sfx_ID, 2);
+                                set_buff(BUFF_NONE);
+                            } else {
+                                flash_background();
+                                play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
+                                if(player_hp == 0) {
+                                    dmg = WORDS_TAG_SLAIN_START;
+                                }
+                                push_log(WORDS_TAG_MISSED_START + dmg, WORDS_TAG_BY_START, enemy_type_name[enemy_types[enemy_idx]]);
+                            }
+                        }
 
-                    if(player_hp == 0) {
-                        dmg = WORDS_TAG_SLAIN_START;
+                        
+                    } else {
+                        enemy_layer[MAPINDEX(enemy_y[enemy_idx], enemy_x[enemy_idx])] = 0;
+                        enemy_x[enemy_idx] = tx;
+                        enemy_y[enemy_idx] = ty;
+                        enemy_layer[tmpidx] = enemy_idx+1;
                     }
-                    push_log(WORDS_TAG_MISSED_START + dmg, WORDS_TAG_BY_START, enemy_type_name[enemy_types[enemy_idx]]);
-                } else {
-                    enemy_layer[MAPINDEX(enemy_y[enemy_idx], enemy_x[enemy_idx])] = 0;
-                    enemy_x[enemy_idx] = tx;
-                    enemy_y[enemy_idx] = ty;
-                    enemy_layer[tmpidx] = enemy_idx+1;
                 }
             }
 

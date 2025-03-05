@@ -43,7 +43,7 @@ const char loot_generation_table[] = {
     0x00, //nothing! you get nothing! you lose!
     0x61, 0x61, 0x61, 0x61,//some coins
     0x60, 0x60,//pile of coins
-    0x62, 0x62, 0x62, //red potion
+    0x62, 0x62, //red potion
     0x63, //green potion
     0x64, 0x64, //blue potion
     0x66, //sword
