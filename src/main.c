@@ -273,12 +273,17 @@ int main () {
                             if((hit_obj & 0xF0) == 0x60) {
                                 push_log(WORDS_TAG_STEPPED_START, pickable_names[hit_obj & 0xF], 255);
                             } else if((hit_obj & 0xF0) == 0x10) {
-                                if(hit_obj == 0x12) {
-                                    --player_hp;
-                                    play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
-                                    flash_background();
-                                }
                                 push_log(WORDS_TAG_STEPPED_START, floorobj_names[hit_obj & 0xF], 255);
+                                if(hit_obj == 0x12) {
+                                    if(buff_type == BUFF_GUARD) {
+                                        push_log(WORDS_TAG_BLOCKED_START, WORDS_TAG_SPIKES_START, 255);
+                                        set_buff(BUFF_NONE);
+                                    } else {
+                                        --player_hp;
+                                        play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
+                                        flash_background();
+                                    }
+                                }
                             }
                         }
                     }

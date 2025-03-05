@@ -1,5 +1,3 @@
-- wall bump sound
-
 - treasure chests
 
 - cats
@@ -21,5 +19,3 @@
 - UI counter for money
 
 - UI counter for dungeon depth
-
-- some sort of purpose for green potions
