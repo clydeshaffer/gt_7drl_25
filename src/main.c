@@ -247,6 +247,10 @@ int main () {
                             tilemap[tile_idx] = 0;
                             push_log(WORDS_TAG_UNLOCKED_START, WORDS_TAG_DOOR_START, 255);
                         } else {
+                            if(object_layer[tile_idx] == 0x14) {
+                                play_sound_effect(ASSET__asset_main__touch_sfx_ID, 2);
+                                push_log(WORDS_TAG_LOCKED_START, 255, 255);
+                            }
                             player_x = old_x;
                             player_y = old_y;
                             did_move = 0;
