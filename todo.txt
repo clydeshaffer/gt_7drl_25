@@ -1,18 +1,4 @@
-- title screen
-
-- game over screen
-
-- return to title after game over screen
-
-- item pickup sounds
-
-- melee attack sounds
-
-- projectile sounds
-
 - wall bump sound
-
-- door open sound
 
 - treasure chests
 
@@ -21,8 +7,6 @@
 - cats
 
 - longer music
-
-- game over music
 
 - title music
 
