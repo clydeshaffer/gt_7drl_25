@@ -363,6 +363,7 @@ int main () {
                     //Pickable Objects
                     if((hit_obj & 0xF0) == 0x60) {
                         stood_object = 0;
+                        push_log(WORDS_TAG_PICKED_UP_START, pickable_names[hit_obj & 0xF], 255);
                         switch(hit_obj) {
                             case 0x66:
                                 if(player_icon & 0xF) {stood_object = (player_icon & 0xF) + 0x65;}
@@ -401,7 +402,7 @@ int main () {
                             push_log(WORDS_TAG_DROPPED_START, pickable_names[stood_object & 0xF], 255);
                         }
                         play_sound_effect(pickable_sounds[hit_obj & 0xF],2);
-                        push_log(WORDS_TAG_PICKED_UP_START, pickable_names[hit_obj & 0xF], 255);
+                        
                         object_layer[MAPINDEX(player_y, player_x)] = player_icon;
                     } else if((hit_obj & 0xF0) == 0x10) {
                         if(hit_obj == 0x10) {
