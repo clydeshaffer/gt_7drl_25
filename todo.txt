@@ -8,12 +8,6 @@
 
 - shops
 
-- rest/recovery
-
-- xp/levels?
-
 - better enemy behavior than random moves?
-
-- finite number of levels with difficulty curve??
 
 - UI counter for money
