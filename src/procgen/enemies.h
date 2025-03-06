@@ -13,11 +13,11 @@
 
 #define ENEMY_AGGRO_PASSIVE 0 //wont auto to chase mode
 #define ENEMY_AGGRO_PROXIMITY 4 //switch to chase mode in certain distance
-#define ENEMY_AGRRO_DEFENSIVELY 8 //if damaged or nearby enemy is damaged
+#define ENEMY_AGGRO_DEFENSIVELY 8 //if damaged or nearby enemy is damaged
 #define ENEMY_AGGRO_SOON 12 //some % chance of switching to chase on a given turn
 #define ENEMY_BITFIELD_AGGRO 0b00001100 //mask for enemy aggro bitfield
 
-#define ENEMY_FLAG_DIG 16 //destroy wall tiles instead of being blocked. dangerous!
+#define ENEMY_FLAG_UNUSED 16 //might come in handy
 #define ENEMY_FLAG_HIT_AND_RUN 32 //change to retreat mode after attacking
 #define ENEMY_FLAG_RANGED_ATTACKS 64 //use ranged attacks periodically
 #define ENEMY_FLAG_WANDERWALL 128 //switch to wander when hitting a wall
