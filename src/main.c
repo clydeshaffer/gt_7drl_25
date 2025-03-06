@@ -197,6 +197,7 @@ void draw_ui() {
 void roll_attack(char mod) {
     static char damage_roll_count;
 
+    mod += (player_level-1) >> 1;
     if(buff_type == BUFF_STRENGTH) mod += 3;
 
     dmg_rolled = roll_damage(mod - enemy_type_defense_modifiers[enemy_types[hit_obj]]);
