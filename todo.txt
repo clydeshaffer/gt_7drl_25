@@ -8,6 +8,4 @@
 
 - shops
 
-- better enemy behavior than random moves?
-
 - UI counter for money
