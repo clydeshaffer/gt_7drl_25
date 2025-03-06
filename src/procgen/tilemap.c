@@ -39,6 +39,10 @@ char border_rooms_count;
 char background_color_index = 0;
 const char background_color_table[] = { 64, 72, 80, 88, 89, 90 };
 
+int last_dungeon_seed = 0;
+
+#pragma rodata-name(push, "PROG0")
+
 const char loot_generation_table[] = {
     0x00, //nothing! you get nothing! you lose!
     0x61, 0x61, 0x61, 0x61,//some coins
@@ -60,6 +64,8 @@ const char enemy_spawn_table[] = {
     0x55, //ogre
     0x12, 0x12 //spike pit
 };
+
+#pragma rodata-name (pop)
 
 static char i; //non reentrant shared index var
 
@@ -159,6 +165,8 @@ void tunnel_between_points(char x1, char y1, char x2, char y2) {
     }
 }
 
+//Given max bounds for a room, carve a random smaller area
+//Also add the actual new room bounds to the rooms list
 void carve_room(char x1, char y1, char x2, char y2) {
     static char r, c, t;
     ++x1; ++y1;
@@ -190,9 +198,11 @@ void carve_room(char x1, char y1, char x2, char y2) {
 void generate_dungeon_impl() {
     static char r, c, r2, c2;
     static char* tile_cursor;
+    last_dungeon_seed = rnd_seed;
 
     reset_enemies();
 
+    //Clear tile layer
     tile_cursor = tilemap;
     for(r = 0; r < MAP_WIDTH; ++r) {
         for(c = 0; c < MAP_WIDTH; ++c) {
@@ -201,6 +211,7 @@ void generate_dungeon_impl() {
         }
     }
 
+    //Clear object layer
     tile_cursor = object_layer;
     for(r = 0; r < MAP_WIDTH; ++r) {
         for(c = 0; c < MAP_WIDTH; ++c) {
@@ -209,6 +220,7 @@ void generate_dungeon_impl() {
         }
     }
 
+    //Clear enemy layer
     tile_cursor = enemy_layer;
     for(r = 0; r < MAP_WIDTH; ++r) {
         for(c = 0; c < MAP_WIDTH; ++c) {
@@ -217,6 +229,8 @@ void generate_dungeon_impl() {
         }
     }
 
+
+    //Place the "breaks" that grid the rooms
     h_breaks[0] = 0;
     v_breaks[0] = 0;
     h_breaks[BREAKS_COUNT+1] = MAP_WIDTH-1;
@@ -232,6 +246,7 @@ void generate_dungeon_impl() {
         v_breaks[i+1] = tmp_breaks[i];
     }
 
+    //For each pair of breaks, carve a room
     room_idx = 0;
     for(r = 0; r < BREAKS_COUNT+1; ++r) {
         for(c = 0; c < BREAKS_COUNT+1; ++c) {
@@ -242,6 +257,8 @@ void generate_dungeon_impl() {
     }
 
 
+    //Pick a random rectangular subset of rooms as "Region B"
+partition_region_select:
     r = rnd_range(0, BREAKS_COUNT+1);
     c = rnd_range(0, BREAKS_COUNT+1);
     r2 = r;
@@ -253,11 +270,15 @@ void generate_dungeon_impl() {
         c2 = rnd_range(c, BREAKS_COUNT+1);
     }
 
+    if(((r2 - r) == 3) && (c > 0) && (c2 < BREAKS_COUNT)) goto partition_region_select;
+    if(((c2 - c) == 3) && (r > 0) && (r2 < BREAKS_COUNT)) goto partition_region_select;
+
     room_idx = c;
     for(i = 0; i < r; ++i) {
         room_idx += BREAKS_COUNT+1; //somehow this is probably faster than multiplying even though its the same
     }
 
+    //Set all "Region B" rooms to membership 1
     while(r <= r2) {
         for(i = c; i <= c2; ++i) {
             room_partition_membership[room_idx] = 1;
@@ -268,10 +289,11 @@ void generate_dungeon_impl() {
         ++r;
     }
 
+    //Count the rooms in regions A and B
+    //Add Region A rooms to the beginning of room_partition_grouping
+    //Add Region B rooms to the end of room_partition_grouping
     room_group_0_size = 0;
     room_group_1_size = 0;
-
-
     for(room_idx = 0; room_idx < ROOM_COUNT; ++room_idx) {
         if(room_partition_membership[room_idx]) {
             ++room_group_1_size;

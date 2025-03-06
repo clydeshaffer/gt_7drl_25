@@ -13,12 +13,18 @@
 #include "gt/feature/random/random.h"
 #include "buffs.h"
 
+#define HPMP_SHIFT_FACTOR 1
+#define INITIAL_MAX_HP 8
+#define INITIAL_MAX_MP 4
+
 char box_x = 0, box_y = 0;
 char old_x = 1, old_y = 1;
 char did_move;
 char hit_obj;
 char player_icon;
 char key_count;
+char player_max_hp;
+char player_max_mp;
 char player_hp;
 char player_mp;
 int money_count;
@@ -29,6 +35,8 @@ char stood_object_previous;
 char do_generation_next_frame;
 
 char auto_tick_music = 0;
+
+char tmp;
 
 #define PAUSE_MODE_NONE 0
 #define PAUSE_MODE_LOG 1
@@ -92,21 +100,41 @@ void draw_ui() {
     DIRECT_SET_SOURCE_Y(112);
     DIRECT_SET_WIDTH(4);
     DIRECT_SET_DEST_X(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH+2);
-    if(player_hp) {
-        if(buff_type == BUFF_GUARD) {
-            DIRECT_SET_SOURCE_X(24);
-        }
-        DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_hp << 2));
-        DIRECT_SET_HEIGHT(player_hp << 2);
+    if(buff_type == BUFF_GUARD) {
+        DIRECT_SET_SOURCE_X(24);
+    }
+    tmp = player_max_hp - player_hp;
+    if(tmp) {
+        DIRECT_SET_SOURCE_Y(96);
+        
+        DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_max_hp << HPMP_SHIFT_FACTOR));
+        DIRECT_SET_HEIGHT(tmp << HPMP_SHIFT_FACTOR);
     
         DIRECT_DRAW_START();
+        await_drawing();
     }
-    await_drawing();
+    if(player_hp) {
+        DIRECT_SET_SOURCE_Y(112);
+        DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_hp << HPMP_SHIFT_FACTOR));
+        DIRECT_SET_HEIGHT(player_hp << HPMP_SHIFT_FACTOR);
+    
+        DIRECT_DRAW_START();
+        await_drawing();
+    }
+   
     DIRECT_SET_DEST_X(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH+6);
     DIRECT_SET_SOURCE_X(4);
+    tmp = player_max_mp - player_mp;
+    if(tmp) {
+        DIRECT_SET_SOURCE_Y(96);
+        DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_max_mp << HPMP_SHIFT_FACTOR));
+        DIRECT_SET_HEIGHT(tmp << HPMP_SHIFT_FACTOR);
+        DIRECT_DRAW_START();
+    }
     if(player_mp) {
-        DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_mp << 2));
-        DIRECT_SET_HEIGHT(player_mp << 2);
+        DIRECT_SET_SOURCE_Y(112);
+        DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_mp << HPMP_SHIFT_FACTOR));
+        DIRECT_SET_HEIGHT(player_mp << HPMP_SHIFT_FACTOR);
         DIRECT_DRAW_START();
     }
     if(key_count) {
@@ -121,11 +149,8 @@ void draw_ui() {
     }
 
     if(reticle_enabled) {
-
-        if(reticle_x & 128) return;
         if(reticle_x < box_x) return;
         if(reticle_x >= (box_x + MAP_DRAW_TILES)) return;
-        if(reticle_y & 128) return;
         if(reticle_y < box_y) return;
         if(reticle_y >= (box_y + MAP_DRAW_TILES)) return;
 
@@ -166,8 +191,10 @@ int init_player() {
     player_icon = 0x40;
     key_count = 0;
     money_count = 0;
-    player_hp = 8;
-    player_mp = 2;
+    player_max_hp = INITIAL_MAX_HP;
+    player_max_mp = INITIAL_MAX_MP;
+    player_hp = INITIAL_MAX_HP;
+    player_mp = INITIAL_MAX_MP;
     stood_object = 0;
 }
 
@@ -329,103 +356,107 @@ int main () {
             stood_object = stood_object_previous;
         }
 
-        if(player1_new_buttons & INPUT_MASK_A) {
-            if(stood_object) {
-                hit_obj = stood_object;
-                //Pickable Objects
-                if((hit_obj & 0xF0) == 0x60) {
-                    stood_object = 0;
-                    switch(hit_obj) {
-                        case 0x66:
-                            if(player_icon & 0xF) {stood_object = (player_icon & 0xF) + 0x65;}
-                            player_icon = 0x41;
-                            break;
-                        case 0x67:
-                            if(player_icon & 0xF) stood_object = (player_icon & 0xF) + 0x65;
-                            player_icon = 0x42;
-                            break;
-                        case 0x68:
-                            if(player_icon & 0xF) stood_object = (player_icon & 0xF) + 0x65;
-                            player_icon = 0x43;
-                            break;
-                        case 0x60:
-                            money_count += 15;
-                            break;
-                        case 0x61:
-                            money_count += 3;
-                            break;
-                        case 0x65:
-                            ++key_count;
-                            break;
-                        case 0x62:
-                            player_hp += 3;
-                            break;
-                        case 0x63:
-                            set_buff(rnd_range(1, BUFF_TYPE_COUNT));
-                            break;
-                        case 0x64:
-                            player_mp += 3;
-                            break;
-                    }
-                    if(stood_object) {
-                        push_log(WORDS_TAG_DROPPED_START, pickable_names[stood_object & 0xF], 255);
-                    }
-                    play_sound_effect(pickable_sounds[hit_obj & 0xF],2);
-                    push_log(WORDS_TAG_PICKED_UP_START, pickable_names[hit_obj & 0xF], 255);
-                    object_layer[MAPINDEX(player_y, player_x)] = player_icon;
-                } else if((hit_obj & 0xF0) == 0x10) {
-                    if(hit_obj == 0x10) {
-                        inc_floor_number();
-                        do_generation_next_frame = 1;
-                        push_log(WORDS_TAG_GENERATING_START, 255, 255);
-                        stood_object = 0x11;
-                    } else if(hit_obj == 0x11) {
-                        push_log(WORDS_TAG_UNSEEN_FORCE_START, WORDS_TAG_PREVENTS_RETREAT_START, 255);
-                    }
-                }
-            }
-        } else if(player1_new_buttons & INPUT_MASK_C) {
-            if(reticle_enabled) {
-                reticle_enabled = 0;
-                if(player_icon == 0x43) {
-                    --player_mp;
-                    projectile_sprite = 0x80;
-                    push_log(WORDS_TAG_YOU_START, WORDS_TAG_CAST_SPELL_START, 255);
-                    play_sound_effect(ASSET__asset_main__spell_sfx_ID, 2);
-                } else {
-                    projectile_sprite = 0x70;
-                    push_log(WORDS_TAG_YOU_START, WORDS_TAG_SHOT_ARROW_START, 255);
-                    play_sound_effect(ASSET__asset_main__arrow_sfx_ID, 2);
-                }
-                
-                hit_obj = scan_line(player_x, player_y, reticle_x, reticle_y);
-                if(hit_obj) {
-                    --hit_obj;
-                    roll_attack(ranged_modifiers[player_icon & 0x0F]);
-                }
-                act_enemies();
-            } else {
-                if((player_icon & 254) == 0x42 ) {
-                    if((player_icon == 0x43) && (player_mp == 0)) {
-                        push_log(WORDS_TAG_NO_MANA_START, 255, 255);
-                    } else {
-                        reticle_enabled = 1;
-
-                        if(enemy_closest_dist < 10) {
-                            reticle_x = enemy_x[enemy_closest_idx];
-                            reticle_y = enemy_y[enemy_closest_idx];
-                        } else {
-                            reticle_x = player_x+1;
-                            reticle_y = player_y;
+        if(player_hp) {
+            if(player1_new_buttons & INPUT_MASK_A) {
+                if(stood_object) {
+                    hit_obj = stood_object;
+                    //Pickable Objects
+                    if((hit_obj & 0xF0) == 0x60) {
+                        stood_object = 0;
+                        switch(hit_obj) {
+                            case 0x66:
+                                if(player_icon & 0xF) {stood_object = (player_icon & 0xF) + 0x65;}
+                                player_icon = 0x41;
+                                break;
+                            case 0x67:
+                                if(player_icon & 0xF) stood_object = (player_icon & 0xF) + 0x65;
+                                player_icon = 0x42;
+                                break;
+                            case 0x68:
+                                if(player_icon & 0xF) stood_object = (player_icon & 0xF) + 0x65;
+                                player_icon = 0x43;
+                                break;
+                            case 0x60:
+                                money_count += 15;
+                                break;
+                            case 0x61:
+                                money_count += 3;
+                                break;
+                            case 0x65:
+                                ++key_count;
+                                break;
+                            case 0x62:
+                                player_hp += 3;
+                                if(player_hp > player_max_hp) player_hp = player_max_hp;
+                                break;
+                            case 0x63:
+                                set_buff(rnd_range(1, BUFF_TYPE_COUNT));
+                                break;
+                            case 0x64:
+                                player_mp += 3;
+                                if(player_mp > player_max_mp) player_mp = player_max_mp;
+                                break;
+                        }
+                        if(stood_object) {
+                            push_log(WORDS_TAG_DROPPED_START, pickable_names[stood_object & 0xF], 255);
+                        }
+                        play_sound_effect(pickable_sounds[hit_obj & 0xF],2);
+                        push_log(WORDS_TAG_PICKED_UP_START, pickable_names[hit_obj & 0xF], 255);
+                        object_layer[MAPINDEX(player_y, player_x)] = player_icon;
+                    } else if((hit_obj & 0xF0) == 0x10) {
+                        if(hit_obj == 0x10) {
+                            inc_floor_number();
+                            do_generation_next_frame = 1;
+                            push_log(WORDS_TAG_GENERATING_START, 255, 255);
+                            stood_object = 0x11;
+                        } else if(hit_obj == 0x11) {
+                            push_log(WORDS_TAG_UNSEEN_FORCE_START, WORDS_TAG_PREVENTS_RETREAT_START, 255);
                         }
                     }
-                } else {
-                    push_log(WORDS_TAG_NO_RANGED_START, 255, 255);
                 }
-            }
-        } else if(player1_new_buttons & INPUT_MASK_B) {
-            if(reticle_enabled) {
-                reticle_enabled = 0;
+            } else if(player1_new_buttons & INPUT_MASK_C) {
+                if(reticle_enabled) {
+                    reticle_enabled = 0;
+                    if(player_icon == 0x43) {
+                        --player_mp;
+                        projectile_sprite = 0x80;
+                        push_log(WORDS_TAG_YOU_START, WORDS_TAG_CAST_SPELL_START, 255);
+                        play_sound_effect(ASSET__asset_main__spell_sfx_ID, 2);
+                    } else {
+                        projectile_sprite = 0x70;
+                        push_log(WORDS_TAG_YOU_START, WORDS_TAG_SHOT_ARROW_START, 255);
+                        play_sound_effect(ASSET__asset_main__arrow_sfx_ID, 2);
+                    }
+                    
+                    hit_obj = scan_line(player_x, player_y, reticle_x, reticle_y);
+                    if(hit_obj) {
+                        --hit_obj;
+                        roll_attack(ranged_modifiers[player_icon & 0x0F]);
+                    }
+                    act_enemies();
+                } else {
+                    if((player_icon & 254) == 0x42 ) {
+                        if((player_icon == 0x43) && (player_mp == 0)) {
+                            push_log(WORDS_TAG_NO_MANA_START, 255, 255);
+                        } else {
+                            reticle_enabled = 1;
+
+                            if(enemy_closest_dist < 10) {
+                                reticle_x = enemy_x[enemy_closest_idx];
+                                reticle_y = enemy_y[enemy_closest_idx];
+                            } else {
+                                reticle_x = player_x+1;
+                                reticle_y = player_y;
+                            }
+                        }
+                    } else {
+                        push_log(WORDS_TAG_NO_RANGED_START, 255, 255);
+                    }
+                }
+            } else if(player1_new_buttons & INPUT_MASK_B) {
+                if(reticle_enabled) {
+                    reticle_enabled = 0;
+                }
             }
         }
 

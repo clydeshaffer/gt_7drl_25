@@ -53,6 +53,7 @@ void reset_enemies() {
     }
 }
 
+#pragma code-name (push, "PROG0")
 char add_enemy(char type, char x, char y) {
     if(enemy_count == MAX_ENEMIES) {
         return 0;
@@ -73,6 +74,7 @@ char add_enemy(char type, char x, char y) {
     
     return 0;
 }
+#pragma code-name (pop)
 
 void act_enemies() {
     static char tx, ty, dmg;

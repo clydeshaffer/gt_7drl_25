@@ -11,6 +11,8 @@
 #error "Module RANDOM included but not enabled!"
 #endif
 
+extern int rnd_seed;
+
 int rnd();
 
 int rnd_range(int low, int high);
