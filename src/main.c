@@ -230,6 +230,7 @@ void roll_attack(char mod) {
                     player_level_ones = 0;
                     ++player_level_tens;
                 }
+                play_song(ASSET__asset_main__levelup_mid, REPEAT_RESUME);
                 push_log(WORDS_TAG_YOU_FEEL_START, WORDS_TAG_ADEPT_START, 255);
                 push_log_num(WORDS_TAG_YOU_ARE_LEVEL_START, WORDS_TAG_DIGITS_START + player_level_tens, WORDS_TAG_DIGITS_START + player_level_ones);
             }
