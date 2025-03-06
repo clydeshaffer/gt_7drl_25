@@ -58,8 +58,8 @@ const char ranged_modifiers[] = {0, 0, 0, 3, 0};
 
 #define PLAYER_MAX_LEVEL 20
 const int player_xp_levelups[] = {
-    40,
-    60,
+    30,
+    50,
     70,
     90,
     100,
@@ -214,7 +214,7 @@ void roll_attack(char mod) {
     }
 
     if(!enemy_hp[hit_obj]) {
-        dmg_rolled = WORDS_TAG_SLEW_START;
+        push_log(WORDS_TAG_SLEW_START, enemy_type_name[enemy_types[hit_obj]], 255);
         if(player_level < PLAYER_MAX_LEVEL) {
             player_xp += enemy_type_defense_modifiers[enemy_types[hit_obj]] + 1;
             if(player_xp > player_xp_levelups[player_level-1]) {
@@ -230,16 +230,17 @@ void roll_attack(char mod) {
                     ++player_level_tens;
                 }
                 push_log(WORDS_TAG_YOU_FEEL_START, WORDS_TAG_ADEPT_START, 255);
-                push_log_num(WORDS_TAG_DEPTH_START, WORDS_TAG_DIGITS_START + player_level_tens, WORDS_TAG_DIGITS_START + player_level_ones);
+                push_log_num(WORDS_TAG_YOU_ARE_LEVEL_START, WORDS_TAG_DIGITS_START + player_level_tens, WORDS_TAG_DIGITS_START + player_level_ones);
             }
         }
         enemy_layer[MAPINDEX(enemy_y[hit_obj], enemy_x[hit_obj])] = 0;
         play_sound_effect(ASSET__asset_main__pain1_sfx_ID, 2);
     } else {
+        push_log(dmg_rolled, enemy_type_name[enemy_types[hit_obj]], 255);
         if(dmg_rolled)
             play_sound_effect(ASSET__asset_main__impact_sfx_ID, 2);
     }
-    push_log(dmg_rolled, enemy_type_name[enemy_types[hit_obj]], 255);
+   
 }
 
 int init_player() {
