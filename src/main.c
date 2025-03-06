@@ -14,7 +14,7 @@
 #include "buffs.h"
 
 #define HPMP_SHIFT_FACTOR 1
-#define INITIAL_MAX_HP 8
+#define INITIAL_MAX_HP 10
 #define INITIAL_MAX_MP 4
 
 char box_x = 0, box_y = 0;
@@ -26,7 +26,13 @@ char key_count;
 char player_max_hp;
 char player_max_mp;
 char player_hp;
+#define PLAYER_HEAL_INTERVAL 64
+char player_heal_tick;
 char player_mp;
+int player_xp;
+char player_level;
+char player_level_tens;
+char player_level_ones;
 int money_count;
 int tile_idx;
 char dmg_rolled;
@@ -47,8 +53,31 @@ char reticle_enabled = 0;
 char reticle_x;
 char reticle_y;
 
-const char weapon_modifiers[] = {0, 4, 0, 1, 0};
-const char ranged_modifiers[] = {0, 0, 1, 6, 0};
+const char weapon_modifiers[] = {0, 1, 0, 0, 0};
+const char ranged_modifiers[] = {0, 0, 0, 3, 0};
+
+#define PLAYER_MAX_LEVEL 20
+const int player_xp_levelups[] = {
+    40,
+    60,
+    70,
+    90,
+    100,
+    110,
+    120,
+    130,
+    140,
+    150,
+    160,
+    175,
+    185,
+    190,
+    200,
+    215,
+    232,
+    243,
+    261
+};
 
 const char pickable_names[] = {
     WORDS_TAG_GOLD_PILE_START,
@@ -166,18 +195,44 @@ void draw_ui() {
 }
 
 void roll_attack(char mod) {
+    static char damage_roll_count;
 
     if(buff_type == BUFF_STRENGTH) mod += 3;
 
-    dmg_rolled = roll_damage(mod);
+    dmg_rolled = roll_damage(mod - enemy_type_defense_modifiers[enemy_types[hit_obj]]);
     
-    enemy_hp[hit_obj] -= dmg_rolled;
+    if(dmg_rolled) {
+        damage_roll_count = mod+1;
+        while(damage_roll_count--){
+            enemy_hp[hit_obj] -= dmg_rolled;
+        }
+    }
+    
+    
     if(enemy_hp[hit_obj] & 128) {
         enemy_hp[hit_obj] = 0;
     }
 
     if(!enemy_hp[hit_obj]) {
         dmg_rolled = WORDS_TAG_SLEW_START;
+        if(player_level < PLAYER_MAX_LEVEL) {
+            player_xp += enemy_type_defense_modifiers[enemy_types[hit_obj]] + 1;
+            if(player_xp > player_xp_levelups[player_level-1]) {
+                player_xp -= player_xp_levelups[player_level-1];
+                ++player_level;
+                player_max_hp += 2;
+                ++player_max_mp;
+                player_hp = player_max_hp;
+                player_mp = player_max_mp;
+                ++player_level_ones;
+                if(player_level_ones == 10) {
+                    player_level_ones = 0;
+                    ++player_level_tens;
+                }
+                push_log(WORDS_TAG_YOU_FEEL_START, WORDS_TAG_ADEPT_START, 255);
+                push_log_num(WORDS_TAG_DEPTH_START, WORDS_TAG_DIGITS_START + player_level_tens, WORDS_TAG_DIGITS_START + player_level_ones);
+            }
+        }
         enemy_layer[MAPINDEX(enemy_y[hit_obj], enemy_x[hit_obj])] = 0;
         play_sound_effect(ASSET__asset_main__pain1_sfx_ID, 2);
     } else {
@@ -196,6 +251,24 @@ int init_player() {
     player_hp = INITIAL_MAX_HP;
     player_mp = INITIAL_MAX_MP;
     stood_object = 0;
+    player_xp = 0;
+    player_level = 1;
+    player_level_tens = 0;
+    player_level_ones = 1;
+    player_heal_tick = 0;
+}
+
+void tick_world() {
+    act_enemies();
+    ++player_heal_tick;
+    if(player_heal_tick == PLAYER_HEAL_INTERVAL) {
+        if(player_hp < player_max_hp) {
+            ++player_hp;
+        } else if(player_mp < player_max_mp) {
+            ++player_mp;
+        }
+        player_heal_tick = 0;
+    }
 }
 
 int main () {
@@ -320,7 +393,7 @@ int main () {
 
                     object_layer[MAPINDEX(player_y, player_x)] = player_icon;
 
-                    act_enemies();
+                    tick_world();
                 }
             } else {
                 if(player_icon != 0x44) {
@@ -434,7 +507,7 @@ int main () {
                         --hit_obj;
                         roll_attack(ranged_modifiers[player_icon & 0x0F]);
                     }
-                    act_enemies();
+                    tick_world();
                 } else {
                     if((player_icon & 254) == 0x42 ) {
                         if((player_icon == 0x43) && (player_mp == 0)) {
@@ -457,6 +530,8 @@ int main () {
             } else if(player1_new_buttons & INPUT_MASK_B) {
                 if(reticle_enabled) {
                     reticle_enabled = 0;
+                } else {
+                    tick_world();
                 }
             }
         }

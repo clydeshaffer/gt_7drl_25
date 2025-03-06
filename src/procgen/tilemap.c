@@ -55,14 +55,9 @@ const char loot_generation_table[] = {
     0x68 //staff
 };
 
-const char enemy_spawn_table[] = {
-    0x50, 0x50, 0x50, 0x50,//beetle
-    0x51, 0x51, 0x51, 0x51,//goblin
-    0x52, 0x52, 0x52, //zombie
-    0x53, 0x52, //ghost
-    0x54, 0x54, //naga
-    0x55, //ogre
-    0x12, 0x12 //spike pit
+//255 will indicate it should only spawn on the last floor per section
+const char enemy_spawn_convolution[] = {
+    10, 5, 1, 255
 };
 
 #pragma rodata-name (pop)
@@ -80,6 +75,7 @@ void reset_floor_number() {
 }
 
 void inc_floor_number() {
+    if(floor_num == 99) return;
     ++floor_num;
     ++floor_ones;
     if(floor_ones == 10) {
@@ -351,17 +347,33 @@ partition_region_select:
     }
 
     for(room_idx = 1; room_idx < ROOM_COUNT; ++room_idx) {
-        if((rnd() & 3) == 0) c = loot_generation_table[rnd_range(0, sizeof(loot_generation_table))];
-        else c = enemy_spawn_table[rnd_range(0, sizeof(enemy_spawn_table))];
-
-        object_layer[MAPINDEX(rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]))] = c;
-
+        c = 0;
         if((rnd() & 3) == 0) {
-            if((rnd() & 3) == 0) c = loot_generation_table[rnd_range(0, sizeof(loot_generation_table))];
-            else c = enemy_spawn_table[rnd_range(0, sizeof(enemy_spawn_table))];
+            c = loot_generation_table[rnd_range(0, sizeof(loot_generation_table))];
             object_layer[MAPINDEX(rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]))] = c;
         }
+
+        if((rnd() & 3) == 0) {
+            if((rnd() & 3) == 0) {
+                c = loot_generation_table[rnd_range(0, sizeof(loot_generation_table))];
+                object_layer[MAPINDEX(rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]))] = c;
+            }
+        }
     }
+
+    for(r = 0; r < sizeof(enemy_spawn_convolution); ++r) {
+        for(c = 0; c < enemy_spawn_convolution[r]; ++c) {
+            if(enemy_spawn_convolution[r] == 255) {
+                if(floor_ones != 9) {
+                    break;
+                }
+                c = 254;
+            }
+            room_idx = rnd_range(0, ROOM_COUNT);
+            object_layer[MAPINDEX(rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]),rnd_range(rooms_x1[room_idx], rooms_x2[room_idx]))] = 0x50 + floor_tens + r;
+        }
+    }
+
 
     tile_cursor = object_layer;
     for(r = 0; r < MAP_WIDTH; ++r) {

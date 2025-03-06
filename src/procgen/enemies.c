@@ -7,6 +7,8 @@
 #include "../buffs.h"
 #include "../gen/assets/asset_main/words.json.h"
 #include "../gen/assets/asset_main.h"
+#include "../gen/bank_nums.h"
+#include "../gt/banking.h"
 
 char enemy_types[MAX_ENEMIES];
 char enemy_icons[MAX_ENEMIES];
@@ -17,9 +19,9 @@ char enemy_data[MAX_ENEMIES];
 
 char enemy_count;
 
-const char enemy_type_icons[ENEMY_TYPE_COUNT] = {0x50, 0x51, 0x52, 0x53, 0x54, 0x55};
-const char enemy_type_initial_hp[ENEMY_TYPE_COUNT] = { 4, 5, 5, 3, 6, 8 };
-const char enemy_type_attack_modifiers[ENEMY_TYPE_COUNT] = { 0, 0, 1, 0, 2, 5};
+const char enemy_type_initial_hp[ENEMY_TYPE_COUNT] = { 2, 8, 5, 8, 4, 10, 10, 20, 8, 40, 50, 50, 60, 66, 80, 66 };
+const char enemy_type_attack_modifiers[ENEMY_TYPE_COUNT] = {  0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4,  5,  3,  5 };
+const char enemy_type_defense_modifiers[ENEMY_TYPE_COUNT] = { 0, 1, 2, 2, 4, 3, 4, 5, 5, 6, 7, 8, 9, 13, 13, 13};
 
 char enemy_closest_idx;
 char enemy_closest_dist;
@@ -29,20 +31,35 @@ char action_counter;
 const char enemy_attack_dmg_table[ATTACK_TABLE_SIZE] = { 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3};
 
 const char enemy_type_name[ENEMY_TYPE_COUNT] = {
+    WORDS_TAG_SLIME_START,
     WORDS_TAG_BEETLE_START,
     WORDS_TAG_GOBLIN_START,
     WORDS_TAG_ZOMBIE_START,
     WORDS_TAG_GHOST_START,
+    WORDS_TAG_SKELETON_START,
     WORDS_TAG_NAGA_START,
-    WORDS_TAG_OGRE_START
+    WORDS_TAG_OGRE_START,
+    WORDS_TAG_MAGE_START,
+    WORDS_TAG_DEVIL_START,
+    WORDS_TAG_AUTOMATON_START,
+    WORDS_TAG_ABERRANT_START,
+    WORDS_TAG_SNATCHER_START,
+    WORDS_TAG_DEXTER_START,
+    WORDS_TAG_FIEND_START,
+    WORDS_TAG_SINISTER_START
 };
 
 char enemy_idx;
 
 extern char player_hp;
 
-char roll_damage(char mod) {
-    return enemy_attack_dmg_table[rnd_range(0, ATTACK_TABLE_SIZE - mod) + mod];
+char roll_damage(signed char mod) {
+    if(mod >= ATTACK_TABLE_SIZE) return 3;
+    if(ATTACK_TABLE_SIZE-mod <= 0) return 0;
+    if(mod > 0) 
+        return enemy_attack_dmg_table[rnd_range(mod, ATTACK_TABLE_SIZE)];
+    else
+    return enemy_attack_dmg_table[rnd_range(0, ATTACK_TABLE_SIZE - mod)];
 }
 
 void reset_enemies() {
@@ -62,7 +79,7 @@ char add_enemy(char type, char x, char y) {
     for(enemy_idx = 0; enemy_idx < MAX_ENEMIES; ++enemy_idx) {
         if(enemy_hp[enemy_idx] == 0) {
             enemy_types[enemy_idx] = type;
-            enemy_icons[enemy_idx] = enemy_type_icons[type];
+            enemy_icons[enemy_idx] = 0x50 + type;
             enemy_hp[enemy_idx] = enemy_type_initial_hp[type];
             enemy_x[enemy_idx] = x;
             enemy_y[enemy_idx] = y;
@@ -74,10 +91,10 @@ char add_enemy(char type, char x, char y) {
     
     return 0;
 }
-#pragma code-name (pop)
 
-void act_enemies() {
-    static char tx, ty, dmg;
+extern char player_heal_tick;
+void act_enemies_impl() {
+    static char tx, ty, dmg, player_old_hp, attack_roll_counter, etype;
     static int tmpidx;
     ++action_counter;
 
@@ -87,6 +104,7 @@ void act_enemies() {
     enemy_closest_dist = 255;
     for(enemy_idx = 0; enemy_idx < MAX_ENEMIES; ++enemy_idx) {
         if(enemy_hp[enemy_idx] != 0) {
+            etype = enemy_types[enemy_idx];
             //If player is speed buffed, skip every other enemy turn
             //but still compute closest enemy
             if((buff_type != BUFF_SPEED) || (action_counter & 1)) {
@@ -109,23 +127,30 @@ void act_enemies() {
                 tmpidx = MAPINDEX(ty, tx);
                 if(!(tilemap[tmpidx] & 128) && !(enemy_layer[tmpidx])) {
                     if((object_layer[tmpidx] & 0xF0) == 0x40) {
-                        dmg = roll_damage(enemy_type_attack_modifiers[enemy_types[enemy_idx]]);
-                        player_hp -= dmg;
+                        dmg = roll_damage(enemy_type_attack_modifiers[etype]);
+                        player_old_hp = player_hp;
+
+                        attack_roll_counter = enemy_type_attack_modifiers[etype]+1;
+                        while(attack_roll_counter--) {
+                            player_hp -= dmg;
+                        }
+
                         if(player_hp & 128) player_hp = 0;
 
                         if(dmg) {
                             if(buff_type == BUFF_GUARD) {
-                                player_hp += dmg;
-                                push_log(WORDS_TAG_BLOCKED_START, enemy_type_name[enemy_types[enemy_idx]], 255);
+                                player_hp = player_old_hp;
+                                push_log(WORDS_TAG_BLOCKED_START, enemy_type_name[etype], 255);
                                 play_sound_effect(ASSET__asset_main__spell_sfx_ID, 2);
                                 set_buff(BUFF_NONE);
                             } else {
+                                player_heal_tick = 0;
                                 flash_background();
                                 play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
                                 if(player_hp == 0) {
                                     dmg = WORDS_TAG_SLAIN_START;
                                 }
-                                push_log(WORDS_TAG_MISSED_START + dmg, WORDS_TAG_BY_START, enemy_type_name[enemy_types[enemy_idx]]);
+                                push_log(WORDS_TAG_MISSED_START + dmg, WORDS_TAG_BY_START, enemy_type_name[etype]);
                             }
                         }
 
@@ -156,4 +181,12 @@ void act_enemies() {
             }
         }
     }
+}
+#pragma code-name (pop)
+
+void act_enemies() {
+    push_rom_bank();
+    change_rom_bank(BANK_PROG0);
+    act_enemies_impl();
+    pop_rom_bank();
 }
