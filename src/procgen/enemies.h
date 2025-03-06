@@ -5,6 +5,26 @@
 #define MAX_ENEMIES 24
 #define ENEMY_TYPE_COUNT 16
 
+#define ENEMY_MOVEMENT_SIT 0 //dont move, "chase" only if distance=1
+#define ENEMY_MOVEMENT_WANDER 1 //pick a direction randomly
+#define ENEMY_MOVEMENT_CHASE 2 //move towards player along most distant axis
+#define ENEMY_MOVEMENT_RETREAT 3 //with distance limit
+#define ENEMY_BITFIELD_MOVEMENT 0b00000011 //mask for enemy movement bitfield
+
+#define ENEMY_AGGRO_PASSIVE 0 //wont auto to chase mode
+#define ENEMY_AGGRO_PROXIMITY 4 //switch to chase mode in certain distance
+#define ENEMY_AGRRO_DEFENSIVELY 8 //if damaged or nearby enemy is damaged
+#define ENEMY_AGGRO_SOON 12 //some % chance of switching to chase on a given turn
+#define ENEMY_BITFIELD_AGGRO 0b00001100 //mask for enemy aggro bitfield
+
+#define ENEMY_FLAG_DIG 16 //destroy wall tiles instead of being blocked. dangerous!
+#define ENEMY_FLAG_HIT_AND_RUN 32 //change to retreat mode after attacking
+#define ENEMY_FLAG_RANGED_ATTACKS 64 //use ranged attacks periodically
+#define ENEMY_FLAG_WANDERWALL 128 //switch to wander when hitting a wall
+#define ENEMY_BITFIELD_FLAGS 0b11110000
+
+#define ENEMY_PROXIMITY_AGGRO_RANGE 6
+
 extern char enemy_types[MAX_ENEMIES];
 extern char enemy_icons[MAX_ENEMIES];
 extern char enemy_hp[MAX_ENEMIES];
@@ -17,6 +37,8 @@ extern char enemy_closest_idx;
 extern char enemy_closest_dist;
 
 char roll_damage(signed char mod);
+
+void damage_enemy(char enemy_id, char dmg);
 
 void reset_enemies();
 

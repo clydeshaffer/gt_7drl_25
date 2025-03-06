@@ -16,8 +16,8 @@ char tilemap[MAP_WIDTH * MAP_WIDTH];
 char object_layer[MAP_WIDTH * MAP_WIDTH];
 char enemy_layer[MAP_WIDTH * MAP_WIDTH];
 
-char player_x;
-char player_y;
+char player_x, player_y;
+char player_old_x, player_old_y;
 
 char h_breaks[BREAKS_COUNT+2];
 char v_breaks[BREAKS_COUNT+2];

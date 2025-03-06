@@ -701,6 +701,7 @@
   "size": { "w": 128, "h": 105 },
   "scale": "1",
   "frameTags": [
+   { "name": "damage roll texts", "from": 0, "to": 3, "direction": "forward", "color": "#000000ff" },
    { "name": "missed", "from": 0, "to": 0, "direction": "forward", "color": "#000000ff" },
    { "name": "slightly hurt", "from": 1, "to": 1, "direction": "forward", "color": "#000000ff" },
    { "name": "struck", "from": 2, "to": 2, "direction": "forward", "color": "#000000ff" },

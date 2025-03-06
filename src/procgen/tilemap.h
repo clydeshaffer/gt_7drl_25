@@ -13,8 +13,8 @@ extern char tilemap[MAP_WIDTH * MAP_WIDTH];
 extern char object_layer[MAP_WIDTH * MAP_WIDTH];
 extern char enemy_layer[MAP_WIDTH * MAP_WIDTH];
 
-extern char player_x;
-extern char player_y;
+extern char player_x, player_y;
+extern char player_old_x, player_old_y;
 
 void flash_background();
 

@@ -12,13 +12,14 @@
 #include "titlescreen.h"
 #include "gt/feature/random/random.h"
 #include "buffs.h"
+#include "gen/bank_nums.h"
+#include "gt/banking.h"
 
 #define HPMP_SHIFT_FACTOR 1
 #define INITIAL_MAX_HP 10
 #define INITIAL_MAX_MP 4
 
 char box_x = 0, box_y = 0;
-char old_x = 1, old_y = 1;
 char did_move;
 char hit_obj;
 char player_icon;
@@ -160,8 +161,9 @@ void draw_ui() {
         DIRECT_SET_HEIGHT(tmp << HPMP_SHIFT_FACTOR);
         DIRECT_DRAW_START();
     }
+    DIRECT_SET_SOURCE_Y(112);
     if(player_mp) {
-        DIRECT_SET_SOURCE_Y(112);
+
         DIRECT_SET_DEST_Y((MAP_DRAW_WIDTH + MAP_DRAW_OFFSET_X) - (player_mp << HPMP_SHIFT_FACTOR));
         DIRECT_SET_HEIGHT(player_mp << HPMP_SHIFT_FACTOR);
         DIRECT_DRAW_START();
@@ -171,7 +173,6 @@ void draw_ui() {
         DIRECT_SET_DEST_Y(MAP_DRAW_OFFSET_Y);
         DIRECT_SET_DEST_X(MAP_DRAW_OFFSET_Y+MAP_DRAW_WIDTH);
         DIRECT_SET_SOURCE_X(8);
-        DIRECT_SET_SOURCE_Y(112);
         DIRECT_SET_WIDTH(8);
         DIRECT_SET_HEIGHT(key_count << 3);
         DIRECT_DRAW_START();
@@ -185,7 +186,6 @@ void draw_ui() {
 
         await_drawing();
         DIRECT_SET_SOURCE_X(16);
-        DIRECT_SET_SOURCE_Y(112);
         DIRECT_SET_WIDTH(8);
         DIRECT_SET_HEIGHT(8);
         DIRECT_SET_DEST_X(((reticle_x - box_x) << 3) + MAP_DRAW_OFFSET_X);
@@ -195,7 +195,6 @@ void draw_ui() {
 }
 
 void roll_attack(char mod) {
-    static char damage_roll_count;
 
     mod += (player_level-1) >> 1;
     if(buff_type == BUFF_STRENGTH) mod += 3;
@@ -203,15 +202,7 @@ void roll_attack(char mod) {
     dmg_rolled = roll_damage(mod - enemy_type_defense_modifiers[enemy_types[hit_obj]]);
     
     if(dmg_rolled) {
-        damage_roll_count = mod+1;
-        while(damage_roll_count--){
-            enemy_hp[hit_obj] -= dmg_rolled;
-        }
-    }
-    
-    
-    if(enemy_hp[hit_obj] & 128) {
-        enemy_hp[hit_obj] = 0;
+        damage_enemy(hit_obj, dmg_rolled*(mod+1));
     }
 
     if(!enemy_hp[hit_obj]) {
@@ -238,7 +229,7 @@ void roll_attack(char mod) {
         enemy_layer[MAPINDEX(enemy_y[hit_obj], enemy_x[hit_obj])] = 0;
         play_sound_effect(ASSET__asset_main__pain1_sfx_ID, 2);
     } else {
-        push_log(dmg_rolled, enemy_type_name[enemy_types[hit_obj]], 255);
+        push_log(WORDS_TAG_DAMAGE_ROLL_TEXTS_START + dmg_rolled, enemy_type_name[enemy_types[hit_obj]], 255);
         if(dmg_rolled)
             play_sound_effect(ASSET__asset_main__impact_sfx_ID, 2);
     }
@@ -273,6 +264,66 @@ void tick_world() {
         player_heal_tick = 0;
     }
 }
+
+#pragma code-name (push, "PROG0")
+void handle_pickup_object() {
+    hit_obj = stood_object;
+    //Pickable Objects
+    if((hit_obj & 0xF0) == 0x60) {
+        stood_object = 0;
+        push_log(WORDS_TAG_PICKED_UP_START, pickable_names[hit_obj & 0xF], 255);
+        switch(hit_obj) {
+            case 0x66:
+                if(player_icon & 0xF) {stood_object = (player_icon & 0xF) + 0x65;}
+                player_icon = 0x41;
+                break;
+            case 0x67:
+                if(player_icon & 0xF) stood_object = (player_icon & 0xF) + 0x65;
+                player_icon = 0x42;
+                break;
+            case 0x68:
+                if(player_icon & 0xF) stood_object = (player_icon & 0xF) + 0x65;
+                player_icon = 0x43;
+                break;
+            case 0x60:
+                money_count += 15;
+                break;
+            case 0x61:
+                money_count += 3;
+                break;
+            case 0x65:
+                ++key_count;
+                break;
+            case 0x62:
+                player_hp += 3;
+                if(player_hp > player_max_hp) player_hp = player_max_hp;
+                break;
+            case 0x63:
+                set_buff(rnd_range(1, BUFF_TYPE_COUNT));
+                break;
+            case 0x64:
+                player_mp += 3;
+                if(player_mp > player_max_mp) player_mp = player_max_mp;
+                break;
+        }
+        if(stood_object) {
+            push_log(WORDS_TAG_DROPPED_START, pickable_names[stood_object & 0xF], 255);
+        }
+        play_sound_effect(pickable_sounds[hit_obj & 0xF],2);
+        
+        object_layer[MAPINDEX(player_y, player_x)] = player_icon;
+    } else if((hit_obj & 0xF0) == 0x10) {
+        if(hit_obj == 0x10) {
+            inc_floor_number();
+            do_generation_next_frame = 1;
+            push_log(WORDS_TAG_GENERATING_START, 255, 255);
+            stood_object = 0x11;
+        } else if(hit_obj == 0x11) {
+            push_log(WORDS_TAG_UNSEEN_FORCE_START, WORDS_TAG_PREVENTS_RETREAT_START, 255);
+        }
+    }
+}
+#pragma code-name (pop)
 
 int main () {
 
@@ -322,8 +373,8 @@ int main () {
 
         update_inputs();
 
-        old_x = player_x;
-        old_y = player_y;
+        player_old_x = player_x;
+        player_old_y = player_y;
         did_move = 0;
         stood_object_previous = stood_object;
         stood_object = 0;
@@ -348,8 +399,8 @@ int main () {
 
                         roll_attack(weapon_modifiers[player_icon & 0x0F]);
 
-                        player_x = old_x;
-                        player_y = old_y;
+                        player_x = player_old_x;
+                        player_y = player_old_y;
                         did_move = 0;
                     } else if(tilemap[tile_idx] & 128) {
                         //Door is a special case, it sits on a wall piece
@@ -364,8 +415,8 @@ int main () {
                                 play_sound_effect(ASSET__asset_main__touch_sfx_ID, 2);
                                 push_log(WORDS_TAG_LOCKED_START, 255, 255);
                             }
-                            player_x = old_x;
-                            player_y = old_y;
+                            player_x = player_old_x;
+                            player_y = player_old_y;
                             did_move = 0;
                         }
                     }
@@ -427,7 +478,7 @@ int main () {
         }
 
         if(did_move) {
-            object_layer[MAPINDEX(old_y, old_x)] = stood_object_previous;
+            object_layer[MAPINDEX(player_old_y, player_old_x)] = stood_object_previous;
         } else {
             stood_object = stood_object_previous;
         }
@@ -435,61 +486,10 @@ int main () {
         if(player_hp) {
             if(player1_new_buttons & INPUT_MASK_A) {
                 if(stood_object) {
-                    hit_obj = stood_object;
-                    //Pickable Objects
-                    if((hit_obj & 0xF0) == 0x60) {
-                        stood_object = 0;
-                        push_log(WORDS_TAG_PICKED_UP_START, pickable_names[hit_obj & 0xF], 255);
-                        switch(hit_obj) {
-                            case 0x66:
-                                if(player_icon & 0xF) {stood_object = (player_icon & 0xF) + 0x65;}
-                                player_icon = 0x41;
-                                break;
-                            case 0x67:
-                                if(player_icon & 0xF) stood_object = (player_icon & 0xF) + 0x65;
-                                player_icon = 0x42;
-                                break;
-                            case 0x68:
-                                if(player_icon & 0xF) stood_object = (player_icon & 0xF) + 0x65;
-                                player_icon = 0x43;
-                                break;
-                            case 0x60:
-                                money_count += 15;
-                                break;
-                            case 0x61:
-                                money_count += 3;
-                                break;
-                            case 0x65:
-                                ++key_count;
-                                break;
-                            case 0x62:
-                                player_hp += 3;
-                                if(player_hp > player_max_hp) player_hp = player_max_hp;
-                                break;
-                            case 0x63:
-                                set_buff(rnd_range(1, BUFF_TYPE_COUNT));
-                                break;
-                            case 0x64:
-                                player_mp += 3;
-                                if(player_mp > player_max_mp) player_mp = player_max_mp;
-                                break;
-                        }
-                        if(stood_object) {
-                            push_log(WORDS_TAG_DROPPED_START, pickable_names[stood_object & 0xF], 255);
-                        }
-                        play_sound_effect(pickable_sounds[hit_obj & 0xF],2);
-                        
-                        object_layer[MAPINDEX(player_y, player_x)] = player_icon;
-                    } else if((hit_obj & 0xF0) == 0x10) {
-                        if(hit_obj == 0x10) {
-                            inc_floor_number();
-                            do_generation_next_frame = 1;
-                            push_log(WORDS_TAG_GENERATING_START, 255, 255);
-                            stood_object = 0x11;
-                        } else if(hit_obj == 0x11) {
-                            push_log(WORDS_TAG_UNSEEN_FORCE_START, WORDS_TAG_PREVENTS_RETREAT_START, 255);
-                        }
-                    }
+                    push_rom_bank();
+                    change_rom_bank(BANK_PROG0);
+                    handle_pickup_object();
+                    pop_rom_bank();
                 }
             } else if(player1_new_buttons & INPUT_MASK_C) {
                 if(reticle_enabled) {

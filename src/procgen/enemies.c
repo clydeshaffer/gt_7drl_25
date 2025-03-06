@@ -70,6 +70,18 @@ void reset_enemies() {
     }
 }
 
+void damage_enemy(char enemy_id, char dmg) {
+    enemy_hp[enemy_id] -= dmg;
+    if(enemy_hp[enemy_id] & 128) {
+        enemy_hp[enemy_id] = 0;
+    } else {
+        if(enemy_data[enemy_id] & ENEMY_AGRRO_DEFENSIVELY) {
+            enemy_data[enemy_id] &= ~ENEMY_BITFIELD_MOVEMENT;
+            enemy_data[enemy_id] |= ENEMY_MOVEMENT_CHASE;
+        }
+    }
+}
+
 #pragma code-name (push, "PROG0")
 char add_enemy(char type, char x, char y) {
     if(enemy_count == MAX_ENEMIES) {
@@ -83,7 +95,7 @@ char add_enemy(char type, char x, char y) {
             enemy_hp[enemy_idx] = enemy_type_initial_hp[type];
             enemy_x[enemy_idx] = x;
             enemy_y[enemy_idx] = y;
-            enemy_data[enemy_idx] = 0;
+            enemy_data[enemy_idx] = ENEMY_MOVEMENT_WANDER | ENEMY_AGRRO_DEFENSIVELY | ENEMY_FLAG_WANDERWALL;
             ++enemy_count;
             return enemy_idx+1;
         }
@@ -94,7 +106,8 @@ char add_enemy(char type, char x, char y) {
 
 extern char player_heal_tick;
 void act_enemies_impl() {
-    static char tx, ty, dmg, player_old_hp, attack_roll_counter, etype;
+    static signed char tx, ty, sx, sy;
+    static char dmg, player_old_hp, attack_roll_counter, etype;
     static int tmpidx;
     ++action_counter;
 
@@ -107,23 +120,56 @@ void act_enemies_impl() {
             etype = enemy_types[enemy_idx];
             //If player is speed buffed, skip every other enemy turn
             //but still compute closest enemy
-            if((buff_type != BUFF_SPEED) || (action_counter & 1)) {
-                tx = enemy_x[enemy_idx];
-                ty = enemy_y[enemy_idx];
-                switch(rnd_range(0, 4)) {
-                    case 0:
-                        ++tx;
-                        break;
-                    case 1:
-                        --tx;
-                        break;
-                    case 2:
-                        ++ty;
-                        break;
-                    case 3:
-                        --ty;
-                        break;
+            if((buff_type != BUFF_SPEED) || (action_counter & 1)) { 
+
+                if((enemy_data[enemy_idx] & ENEMY_BITFIELD_MOVEMENT) == ENEMY_MOVEMENT_WANDER) {
+                    tx = enemy_x[enemy_idx];
+                    ty = enemy_y[enemy_idx];
+                    switch(rnd_range(0, 4)) {
+                        case 0:
+                            ++tx;
+                            break;
+                        case 1:
+                            --tx;
+                            break;
+                        case 2:
+                            ++ty;
+                            break;
+                        case 3:
+                            --ty;
+                            break;
+                    }
+                } else {
+                    if(player_old_x > enemy_x[enemy_idx]) {
+                        sx = 1;
+                        tx = player_old_x - enemy_x[enemy_idx];
+                    } else {
+                        sx = -1;
+                        tx = enemy_x[enemy_idx] - player_old_x;
+                    }
+                    
+                    if(player_old_y > enemy_y[enemy_idx]){
+                        sy = 1;
+                        ty = player_old_y - enemy_y[enemy_idx];
+                    } else {
+                        sy = -1;
+                        ty = enemy_y[enemy_idx] - player_old_y;
+                    }
+
+                    if((enemy_data[enemy_idx] & ENEMY_BITFIELD_MOVEMENT) == ENEMY_MOVEMENT_RETREAT) {
+                        sx = -sx;
+                        sy = -sy;
+                    }
+
+                    if(tx > ty) {
+                        tx = enemy_x[enemy_idx] + sx;
+                        ty = enemy_y[enemy_idx];
+                    } else {
+                        tx = enemy_x[enemy_idx];
+                        ty = enemy_y[enemy_idx] + sy;
+                    }
                 }
+
                 tmpidx = MAPINDEX(ty, tx);
                 if(!(tilemap[tmpidx] & 128) && !(enemy_layer[tmpidx])) {
                     if((object_layer[tmpidx] & 0xF0) == 0x40) {
@@ -154,12 +200,25 @@ void act_enemies_impl() {
                             }
                         }
 
-                        
+                        if(enemy_data[enemy_idx] & ENEMY_FLAG_HIT_AND_RUN) {
+                            enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
+                            enemy_data[enemy_idx] |= ENEMY_MOVEMENT_RETREAT;
+                        }
                     } else {
-                        enemy_layer[MAPINDEX(enemy_y[enemy_idx], enemy_x[enemy_idx])] = 0;
-                        enemy_x[enemy_idx] = tx;
-                        enemy_y[enemy_idx] = ty;
-                        enemy_layer[tmpidx] = enemy_idx+1;
+                        if((enemy_data[enemy_idx] & ENEMY_BITFIELD_MOVEMENT) != ENEMY_MOVEMENT_SIT) {
+                            enemy_layer[MAPINDEX(enemy_y[enemy_idx], enemy_x[enemy_idx])] = 0;
+                            enemy_x[enemy_idx] = tx;
+                            enemy_y[enemy_idx] = ty;
+                            enemy_layer[tmpidx] = enemy_idx+1;
+                        }
+                    }
+                } else {
+                    //only switch to wander if hitting a wall, not another enemy
+                    if(tilemap[tmpidx]&128) {
+                        if(enemy_data[enemy_idx] & ENEMY_FLAG_WANDERWALL) {
+                            enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
+                            enemy_data[enemy_idx] |= ENEMY_MOVEMENT_WANDER;
+                        }
                     }
                 }
             }
@@ -178,6 +237,13 @@ void act_enemies_impl() {
             if(dmg < enemy_closest_dist) {
                 enemy_closest_dist = dmg;
                 enemy_closest_idx = enemy_idx;
+            }
+
+            if(enemy_data[enemy_idx] & ENEMY_AGGRO_PROXIMITY) {
+                if(dmg < ENEMY_PROXIMITY_AGGRO_RANGE) {
+                    enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
+                    enemy_data[enemy_idx] |= ENEMY_MOVEMENT_CHASE;
+                }
             }
         }
     }
