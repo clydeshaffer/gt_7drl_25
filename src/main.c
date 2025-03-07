@@ -435,6 +435,9 @@ int main () {
         if(do_generation_next_frame) {
             generate_dungeon();
             push_log_num(WORDS_TAG_DEPTH_START, WORDS_TAG_DIGITS_START + floor_tens, WORDS_TAG_DIGITS_START + floor_ones);
+            if(floor_ones == 5) {
+                push_log(WORDS_TAG_WELCOME_START, WORDS_TAG_MY_SHOP_START, 255);
+            }
             object_layer[MAPINDEX(player_y, player_x)] = player_icon;
             do_generation_next_frame = 0;
         }
