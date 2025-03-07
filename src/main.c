@@ -615,6 +615,14 @@ int main () {
             pause_mode = !pause_mode;
         }
 
+        if(player_hp > player_max_hp) {
+            player_hp = player_max_hp;
+        }
+
+        if(player_mp > player_max_mp) {
+            player_mp = player_max_mp;
+        }
+
 
         if(pause_mode == PAUSE_MODE_LOG) {
             show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y+(32), 10);
