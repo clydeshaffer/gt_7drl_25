@@ -23,8 +23,8 @@ char enemy_turn_counter[MAX_ENEMIES];
 char enemy_count;
 
 const char enemy_type_initial_hp[ENEMY_TYPE_COUNT] =        { 2, 8, 5, 8, 4, 10, 10, 20, 8, 40, 50, 50, 60, 66, 80, 66, 99, 99 };
-const char enemy_type_attack_modifiers[ENEMY_TYPE_COUNT] =  { 0, 0, 0, 1, 1,  1,  2,  2, 2,  3,  3,  3,  4,  5,  3,  5,  0, 99 };
-const char enemy_type_defense_modifiers[ENEMY_TYPE_COUNT] = { 0, 1, 2, 2, 4,  3,  4,  5, 5,  6,  7,  8,  9, 13, 13, 13, 99, 99 };
+const char enemy_type_attack_modifiers[ENEMY_TYPE_COUNT] =  { 0, 0, 0, 1, 1,  1,  2,  2, 2,  3,  3,  3,  4,  4,  3,  4,  0, 99 };
+const char enemy_type_defense_modifiers[ENEMY_TYPE_COUNT] = { 0, 1, 2, 2, 4,  3,  4,  5, 5,  6,  7,  8,  9, 9, 13, 9, 99, 99 };
 
 #pragma data-name (push, "PROG0")
 const char enemy_turn_rate[ENEMY_TYPE_COUNT] = { 128, 128, 171, 128, 171, 171, 192, 178, 128, 192, 192, 200, 192, 255, 64, 255, 128, 128};
@@ -36,16 +36,16 @@ const char enemy_config[ENEMY_TYPE_COUNT] = {
     /*Zombie:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL,
     /*Ghost:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL | ENEMY_FLAG_HIT_AND_RUN,
     /*Skeleton:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_SOON | ENEMY_FLAG_WANDERWALL,
-    /*Naga:*/  ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL | ENEMY_FLAG_HIT_AND_RUN,
+    /*Naga:*/  ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_SOON | ENEMY_FLAG_WANDERWALL | ENEMY_FLAG_HIT_AND_RUN,
     /*Ogre:*/ ENEMY_MOVEMENT_SIT | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL,
     /*Mage:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PASSIVE | ENEMY_FLAG_WANDERWALL | ENEMY_FLAG_HIT_AND_RUN | ENEMY_FLAG_RANGED_ATTACKS,
     /*Devil:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL,
     /*Automaton:*/ ENEMY_MOVEMENT_SIT | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL,
     /*Aberrant:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL,
-    /*Snatcher:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL,
-    /*Manus Dexter:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_SOON | ENEMY_FLAG_HIT_AND_RUN,
+    /*Snatcher:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_HIT_AND_RUN | ENEMY_FLAG_WANDERWALL,
+    /*Manus Dexter:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_HIT_AND_RUN | ENEMY_FLAG_WANDERWALL,
     /*Remnant Fiend:*/ ENEMY_MOVEMENT_SIT | ENEMY_AGGRO_PASSIVE | ENEMY_FLAG_RANGED_ATTACKS,
-    /*Manus Sinister:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_SOON | ENEMY_FLAG_HIT_AND_RUN,
+    /*Manus Sinister:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_HIT_AND_RUN | ENEMY_FLAG_WANDERWALL,
     /*Kitty Cat:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PASSIVE | ENEMY_FLAG_CUTE,
     /*Big Kitty Cat:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PASSIVE | ENEMY_FLAG_CUTE,
 };
@@ -86,11 +86,11 @@ extern char player_hp;
 
 char roll_damage(signed char mod) {
     if(mod >= ATTACK_TABLE_SIZE) return 3;
-    if(ATTACK_TABLE_SIZE-mod <= 0) return 0;
+    if(mod <= -ATTACK_TABLE_SIZE) return 0;
     if(mod > 0) 
         return enemy_attack_dmg_table[rnd_range(mod, ATTACK_TABLE_SIZE)];
     else
-    return enemy_attack_dmg_table[rnd_range(0, ATTACK_TABLE_SIZE - mod)];
+    return enemy_attack_dmg_table[rnd_range(0, ATTACK_TABLE_SIZE + mod)];
 }
 
 void reset_enemies() {
@@ -111,9 +111,9 @@ void damage_enemy(char enemy_id, char dmg) {
             enemy_data[enemy_id] &= ~ENEMY_BITFIELD_MOVEMENT;
             enemy_data[enemy_id] |= ENEMY_MOVEMENT_CHASE;
         }
-        if(enemy_data[enemy_idx] & ENEMY_FLAG_HIT_AND_RUN) {
-            enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
-            enemy_data[enemy_idx] |= ENEMY_MOVEMENT_RETREAT;
+        if(enemy_data[enemy_id] & ENEMY_FLAG_HIT_AND_RUN) {
+            enemy_data[enemy_id] &= ~ENEMY_BITFIELD_MOVEMENT;
+            enemy_data[enemy_id] |= ENEMY_MOVEMENT_RETREAT;
         }
     }
 }
@@ -250,11 +250,13 @@ void act_enemies_impl() {
                     if((object_layer[tmpidx] & 0xF0) == 0x40) {
                         if(!(enemy_data[enemy_idx] & ENEMY_FLAG_CUTE)) {
                             
-                            roll_attack_against_player(etype);
+                            if(!(enemy_data[enemy_idx] & ENEMY_FLAG_RANGED_ATTACKS)) {
+                                roll_attack_against_player(etype);
 
-                            if(enemy_data[enemy_idx] & ENEMY_FLAG_HIT_AND_RUN) {
-                                enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
-                                enemy_data[enemy_idx] |= ENEMY_MOVEMENT_RETREAT;
+                                if(enemy_data[enemy_idx] & ENEMY_FLAG_HIT_AND_RUN) {
+                                    enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
+                                    enemy_data[enemy_idx] |= ENEMY_MOVEMENT_RETREAT;
+                                }
                             }
                         }
                     } else {

@@ -6,6 +6,7 @@
 #include "tilemap.h"
 #include "enemies.h"
 #include "shop.h"
+#include "bossroom.h"
 
 #define BREAKS_COUNT 3
 #define MIN_SIZE 4
@@ -258,7 +259,10 @@ void generate_shop_instead() {
                     tilemap[MAPINDEX(r+SHOP_MAP_OFFSET_Y, c+SHOP_MAP_OFFSET_X)] = 128;
                     break;
                     case 0x19:
-                    add_enemy(16, c + SHOP_MAP_OFFSET_X, r + SHOP_MAP_OFFSET_Y);
+                    enemy_layer[MAPINDEX(r+SHOP_MAP_OFFSET_Y, c+SHOP_MAP_OFFSET_X)] = add_enemy(16, c + SHOP_MAP_OFFSET_X, r + SHOP_MAP_OFFSET_Y);
+                    tmp = 0;
+                    case 0x20:
+                    enemy_layer[MAPINDEX(r+SHOP_MAP_OFFSET_Y, c+SHOP_MAP_OFFSET_X)] = add_enemy(17, c + SHOP_MAP_OFFSET_X, r + SHOP_MAP_OFFSET_Y);
                     tmp = 0;
                     break;
                 }
@@ -269,6 +273,55 @@ void generate_shop_instead() {
             ++tile_cursor_dest;
         }
         tile_cursor_dest -= SHOP_WIDTH;
+        tile_cursor_dest += MAP_WIDTH;
+    }
+
+}
+
+void generate_boss_room_instead() {
+    static char r, c, tmp;
+    static char* tile_cursor_src;
+    static char* tile_cursor_dest;
+    tile_cursor_src = boss_tiles;
+    tile_cursor_dest = tilemap + MAPINDEX(BOSS_MAP_OFFSET_Y, BOSS_MAP_OFFSET_X);
+    for(r = 0; r < BOSS_MAP_HEIGHT; ++r) {
+        for(c = 0; c < BOSS_MAP_WIDTH; ++c) {
+            *tile_cursor_dest = *tile_cursor_src;
+            ++tile_cursor_src;
+            ++tile_cursor_dest;
+        }
+        tile_cursor_dest -= BOSS_MAP_WIDTH;
+        tile_cursor_dest += MAP_WIDTH;
+    }
+
+    setup_wall_outlines();
+
+    tile_cursor_src = boss_objects;
+    tile_cursor_dest = object_layer + MAPINDEX(BOSS_MAP_OFFSET_Y, BOSS_MAP_OFFSET_X);
+    for(r = 0; r < BOSS_MAP_HEIGHT; ++r) {
+        for(c = 0; c < BOSS_MAP_WIDTH; ++c) {
+            tmp = *tile_cursor_src;
+            switch(tmp) {
+                case 0x40:
+                player_x = c + BOSS_MAP_OFFSET_X;
+                player_y = r + BOSS_MAP_OFFSET_Y;
+                break;
+                case 0x15:
+                tilemap[MAPINDEX(r+BOSS_MAP_OFFSET_Y, c+BOSS_MAP_OFFSET_X)] = 128;
+                break;
+                case 0x5D:
+                case 0x5E:
+                case 0x5F:
+                enemy_layer[MAPINDEX(r+BOSS_MAP_OFFSET_Y, c+BOSS_MAP_OFFSET_X)] = add_enemy(tmp & 0x0F, c + BOSS_MAP_OFFSET_X, r + BOSS_MAP_OFFSET_Y);
+                tmp = 0;
+                break;
+            }
+            *tile_cursor_dest = tmp;
+
+            ++tile_cursor_src;
+            ++tile_cursor_dest;
+        }
+        tile_cursor_dest -= BOSS_MAP_WIDTH;
         tile_cursor_dest += MAP_WIDTH;
     }
 
@@ -310,6 +363,9 @@ void generate_dungeon_impl() {
 
     if(IS_SHOP_FLOOR) {
         generate_shop_instead();
+        return;
+    } else if(floor_num == FINAL_BOSS_FLOOR) {
+        generate_boss_room_instead();
         return;
     }
 
