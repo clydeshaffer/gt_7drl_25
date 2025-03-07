@@ -1,19 +1,19 @@
-- treasure chests
-
-- extend main game music loop
-
-- title music
-
-- UI counter for money
-
 - boss at floor 99
 
 - end/victory screen
-
-- print depth and level when die
 
 stretchgoals:
 
 - different tileset every 10 floors
 
 - different music every 10 floors
+
+- UI counter for money
+
+- title music
+
+- print depth and level when die
+
+- treasure chests
+
+- extend main game music loop
