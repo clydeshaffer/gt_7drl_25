@@ -18,6 +18,7 @@ char log_count;
 char log_dirty;
 char log_chunk_buf[LOG_BUF_SIZE];
 char last_log_count;
+char log_text_bg = 32;
 
 void prepare_log_text() {
     text_sheet = allocate_sprite(&ASSET__asset_main__words_bmp_load_list);
@@ -60,6 +61,8 @@ void push_log(char partA, char partB, char partC) {
 
 void show_logs(char x, char y, char count) {
     static char i, tok, tx, ty;
+    if(count & 128) log_dirty = 2;
+    count &= 127;
     if(count != last_log_count) log_dirty = 2;
     last_log_count = count;
     if(!log_dirty) return;
@@ -69,7 +72,8 @@ void show_logs(char x, char y, char count) {
     while(i & 128) i += LOG_BUF_SIZE;
     push_rom_bank();
     change_rom_bank(ASSET__asset_main__words_json_bank);
-    queue_draw_box(x, y, 127, count << 3, 0);
+    if(log_text_bg)
+        queue_draw_box(x, y, 127, count << 3, log_text_bg);
     if(count > log_count) count = log_count;
     while(count > 0) {
         tx = x;

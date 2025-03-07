@@ -116,6 +116,9 @@ void damage_enemy(char enemy_id, char dmg) {
             enemy_data[enemy_id] |= ENEMY_MOVEMENT_RETREAT;
         }
     }
+    if(enemy_hp[enemy_id] == 0) {
+        --enemy_count;
+    }
 }
 
 #pragma code-name (push, "PROG0")

@@ -24,6 +24,10 @@ music_state_t music_state;
 music_state_t music_stack[MUSIC_STACK_SIZE];
 unsigned char music_stack_idx = 0;
 
+char is_music_playing() {
+    return music_state.cursor != 0;
+}
+
 void push_song_stack() {
     music_stack[music_stack_idx++] = music_state;
     if(music_stack_idx == MUSIC_STACK_SIZE) { music_stack_idx = 0; }

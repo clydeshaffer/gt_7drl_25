@@ -3,8 +3,9 @@
 
 #define LOG_DIGIT_ANTISPACE 254
 
-void prepare_log_text();
+extern char log_text_bg;
 
+void prepare_log_text();
 
 void push_log(char partA, char partB, char partC);
 void push_log_num(char partA, char partB, char partC);

@@ -42,17 +42,21 @@ char stood_object_previous;
 char do_generation_next_frame;
 
 char auto_tick_music = 0;
-
+char started_victory_sequence = 0;
 char tmp;
 
 #define PAUSE_MODE_NONE 0
 #define PAUSE_MODE_LOG 1
 #define PAUSE_MODE_TITLE 2
+#define PAUSE_MODE_CONGRATS 3
 char pause_mode = PAUSE_MODE_TITLE;
 
 char reticle_enabled = 0;
 char reticle_x;
 char reticle_y;
+
+SpriteSlot winscreen;
+
 
 const char weapon_modifiers[] = {0, 1, 0, 0, 0};
 const char ranged_modifiers[] = {0, 0, 0, 3, 0};
@@ -255,6 +259,7 @@ int init_player() {
     player_level_tens = 0;
     player_level_ones = 1;
     player_heal_tick = 0;
+    started_victory_sequence = 0;
 }
 
 void tick_world() {
@@ -267,6 +272,11 @@ void tick_world() {
             ++player_mp;
         }
         player_heal_tick = 0;
+    }
+    if((enemy_count == 0) && (floor_num == FINAL_BOSS_FLOOR) && !started_victory_sequence) {
+        started_victory_sequence = 1;
+        stop_music();
+        push_log(WORDS_TAG_YOU_START, WORDS_TAG_BANISHED_START, WORDS_TAG_THE_FIEND_START);
     }
 }
 
@@ -391,6 +401,43 @@ void handle_wallbump_object() {
         player_y = player_old_y;
     }
 }
+
+void handle_steppedon_object() {
+    //Stepping onto object
+    hit_obj = object_layer[tile_idx];
+    stood_object = hit_obj;
+    if(hit_obj) {
+        if((hit_obj & 0xF0) == 0x60) {
+            push_log(WORDS_TAG_STEPPED_START, pickable_names[hit_obj & 0xF], 255);
+        } else if((hit_obj & 0xF0) == 0x10) {
+            push_log(WORDS_TAG_STEPPED_START, floorobj_names[hit_obj & 0xF], 255);
+            if(hit_obj == 0x12) {
+                if(buff_type == BUFF_GUARD) {
+                    push_log(WORDS_TAG_BLOCKED_START, WORDS_TAG_SPIKES_START, 255);
+                    set_buff(BUFF_NONE);
+                } else {
+                    --player_hp;
+                    play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
+                    flash_background();
+                }
+            }
+        }
+    }
+}
+
+void draw_congrats_screen() {
+    if(started_victory_sequence < 255) ++started_victory_sequence;
+    queue_draw_sprite(0, 0, 127, started_victory_sequence - 128, 0, 255 - started_victory_sequence, winscreen);
+    if(!is_music_playing()) {
+        log_text_bg = 0;
+        show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y + MAP_DRAW_WIDTH + 2, 129);
+        log_text_bg = 32;
+        if(player1_new_buttons & INPUT_MASK_A) {
+            pause_mode = PAUSE_MODE_TITLE;
+        }
+    }
+}
+
 #pragma code-name (pop)
 
 int main () {
@@ -403,6 +450,9 @@ int main () {
     prepare_log_text();
 
     auto_tick_music = 1;
+
+    push_rom_bank();
+    change_rom_bank(BANK_PROG0);
     
     while (1) {
 
@@ -478,33 +528,10 @@ int main () {
                         player_y = player_old_y;
                         did_move = 0;
                     } else if(tilemap[tile_idx] & 128) {
-                        push_rom_bank();
-                        change_rom_bank(BANK_PROG0);
                         handle_wallbump_object();
-                        pop_rom_bank();
                     }
                     else{ 
-                        
-                        //Stepping onto object
-                        hit_obj = object_layer[tile_idx];
-                        stood_object = hit_obj;
-                        if(hit_obj) {
-                            if((hit_obj & 0xF0) == 0x60) {
-                                push_log(WORDS_TAG_STEPPED_START, pickable_names[hit_obj & 0xF], 255);
-                            } else if((hit_obj & 0xF0) == 0x10) {
-                                push_log(WORDS_TAG_STEPPED_START, floorobj_names[hit_obj & 0xF], 255);
-                                if(hit_obj == 0x12) {
-                                    if(buff_type == BUFF_GUARD) {
-                                        push_log(WORDS_TAG_BLOCKED_START, WORDS_TAG_SPIKES_START, 255);
-                                        set_buff(BUFF_NONE);
-                                    } else {
-                                        --player_hp;
-                                        play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
-                                        flash_background();
-                                    }
-                                }
-                            }
-                        }
+                        handle_steppedon_object();
                     }
 
 
@@ -612,10 +639,6 @@ int main () {
         if(box_y == 255) box_y = 0;
         if(box_y == (MAP_WIDTH-MAP_DRAW_TILES+1)) --box_y;
 
-        if(player1_new_buttons & INPUT_MASK_START) {
-            pause_mode = !pause_mode;
-        }
-
         if(player_hp > player_max_hp) {
             player_hp = player_max_hp;
         }
@@ -627,13 +650,37 @@ int main () {
 
         if(pause_mode == PAUSE_MODE_LOG) {
             show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y+(32), 10);
+            if(player1_new_buttons & INPUT_MASK_START) {
+                pause_mode = PAUSE_MODE_NONE;
+            }
         } else if(pause_mode == PAUSE_MODE_NONE) {
+
+            if(player1_new_buttons & INPUT_MASK_START) {
+                pause_mode = PAUSE_MODE_LOG;
+            }
+
             draw_dungeon(box_x, box_y);
 
             draw_ui();
             await_drawing();
 
             show_logs(MAP_DRAW_OFFSET_X, MAP_DRAW_OFFSET_Y + MAP_DRAW_WIDTH + 2, 2);
+
+            if(started_victory_sequence) {
+                if(started_victory_sequence < 127) {
+                    ++started_victory_sequence;
+                } else {
+                    await_draw_queue();
+                    await_vsync(1);
+                    flip_pages();
+                    pause_mode = PAUSE_MODE_CONGRATS;
+                    winscreen = allocate_sprite(&ASSET__asset_main__congrats_bmp_load_list);
+                    play_song(ASSET__asset_main__victory_mid, REPEAT_NONE);
+                    push_log(WORDS_TAG_PRESS_A_START, WORDS_TAG_RETURN_TO_TITLE_START, 255);
+                }
+            }
+        } else if(pause_mode == PAUSE_MODE_CONGRATS) {
+            draw_congrats_screen();
         }
         await_draw_queue();
 

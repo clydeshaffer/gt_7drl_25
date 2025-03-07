@@ -35,6 +35,7 @@ extern const char enemy_type_name[ENEMY_TYPE_COUNT];
 extern const char enemy_type_defense_modifiers[ENEMY_TYPE_COUNT];
 extern char enemy_closest_idx;
 extern char enemy_closest_dist;
+extern char enemy_count;
 
 char roll_damage(signed char mod);
 

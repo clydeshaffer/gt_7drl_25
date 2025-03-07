@@ -1,5 +1,3 @@
-- end/victory screen
-
 stretchgoals:
 
 - different tileset every 10 floors

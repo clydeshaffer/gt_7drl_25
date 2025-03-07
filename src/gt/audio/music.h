@@ -32,4 +32,7 @@ void load_instrument(char channel, Instrument* instr);
 
 void play_sound_effect(char sfx_id, char channel);
 
+//Custom
+char is_music_playing();
+
 #endif
