@@ -1,7 +1,21 @@
 - treasure chests
 
-- longer music
+- extend main game music loop
 
 - title music
 
+- shop music
+
 - UI counter for money
+
+- boss at floor 99
+
+- end/victory screen
+
+- print depth and level when die
+
+stretchgoals:
+
+- different tileset every 10 floors
+
+- different music every 10 floors
