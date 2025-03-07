@@ -195,6 +195,11 @@ void draw_ui() {
 }
 
 void roll_attack(char mod) {
+    if(enemy_data[hit_obj] & ENEMY_FLAG_CUTE) {
+        play_sound_effect(ASSET__asset_main__meow_sfx_ID, 2);
+        push_log(WORDS_TAG_YOU_PET_START, enemy_type_name[enemy_types[hit_obj]], 255);
+        return;
+    }
 
     mod += (player_level-1) >> 1;
     if(buff_type == BUFF_STRENGTH) mod += 3;
@@ -323,6 +328,69 @@ void handle_pickup_object() {
         }
     }
 }
+
+void handle_wallbump_object() {
+    //Door is a special case, it sits on a wall piece
+    //then removes itself and the wall piece after unlocking
+    switch(object_layer[tile_idx]) {
+        case 0x14:
+        if(key_count) {
+            --key_count;
+            play_sound_effect(ASSET__asset_main__unlock_sfx_ID, 2);
+            tilemap[tile_idx] = 0;
+            push_log(WORDS_TAG_UNLOCKED_START, WORDS_TAG_DOOR_START, 255);
+        } else {
+            play_sound_effect(ASSET__asset_main__touch_sfx_ID, 2);
+            push_log(WORDS_TAG_LOCKED_START, 255, 255);
+            did_move = 0;
+        }
+        break;
+        case 0x16:
+        if(money_count >= 10) {
+            money_count -= 10;
+            push_log(WORDS_TAG_THANK_YOU_START, 255, 255);
+            play_sound_effect(ASSET__asset_main__coin_sfx_ID, 2);
+            tilemap[tile_idx] = 0;
+        } else {
+            play_sound_effect(ASSET__asset_main__touch_sfx_ID, 2);
+            push_log(WORDS_TAG_NO_GOLD_START, 255, 255);
+            did_move = 0;
+        }
+        break;
+        case 0x17:
+        if(money_count >= 99) {
+            money_count -= 99;
+            push_log(WORDS_TAG_THANK_YOU_START, 255, 255);
+            play_sound_effect(ASSET__asset_main__coin_sfx_ID, 2);
+            tilemap[tile_idx] = 0;
+        } else {
+            play_sound_effect(ASSET__asset_main__touch_sfx_ID, 2);
+            push_log(WORDS_TAG_NO_GOLD_START, 255, 255);
+            did_move = 0;
+        }
+        break;
+        case 0x18:
+        dmg_rolled = rnd_range(0,100);
+        play_sound_effect(ASSET__asset_main__touch_sfx_ID, 2);
+        if(dmg_rolled < 33) {
+            push_log(WORDS_TAG_PET_THE_CAT_START, WORDS_TAG_NOT_ME_START, 255);
+        } else if(dmg_rolled < 67) {
+            push_log(WORDS_TAG_HANDS_OFF_START, 255, 255);
+        } else {
+            push_log(WORDS_TAG_BUY_SOMETHING_START, WORDS_TAG_WILL_YA_START, 255);
+        }
+        did_move = 0;
+        break;
+        default:
+        did_move = 0;
+        break;
+    }
+
+    if(!did_move) {
+        player_x = player_old_x;
+        player_y = player_old_y;
+    }
+}
 #pragma code-name (pop)
 
 int main () {
@@ -403,22 +471,10 @@ int main () {
                         player_y = player_old_y;
                         did_move = 0;
                     } else if(tilemap[tile_idx] & 128) {
-                        //Door is a special case, it sits on a wall piece
-                        //then removes itself and the wall piece after unlocking
-                        if((object_layer[tile_idx] == 0x14) && key_count) {
-                            --key_count;
-                            play_sound_effect(ASSET__asset_main__unlock_sfx_ID, 2);
-                            tilemap[tile_idx] = 0;
-                            push_log(WORDS_TAG_UNLOCKED_START, WORDS_TAG_DOOR_START, 255);
-                        } else {
-                            if(object_layer[tile_idx] == 0x14) {
-                                play_sound_effect(ASSET__asset_main__touch_sfx_ID, 2);
-                                push_log(WORDS_TAG_LOCKED_START, 255, 255);
-                            }
-                            player_x = player_old_x;
-                            player_y = player_old_y;
-                            did_move = 0;
-                        }
+                        push_rom_bank();
+                        change_rom_bank(BANK_PROG0);
+                        handle_wallbump_object();
+                        pop_rom_bank();
                     }
                     else{ 
                         

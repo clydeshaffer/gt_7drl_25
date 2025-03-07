@@ -5,6 +5,7 @@
 #include "../gen/bank_nums.h"
 #include "tilemap.h"
 #include "enemies.h"
+#include "shop.h"
 
 #define BREAKS_COUNT 3
 #define MIN_SIZE 4
@@ -191,6 +192,88 @@ void carve_room(char x1, char y1, char x2, char y2) {
     }
 }
 
+void setup_wall_outlines() {
+    static char r, c;
+    static char* tile_cursor;
+    tile_cursor = tilemap;
+    for(r = 0; r < MAP_WIDTH; ++r) {
+        for(c = 0; c < MAP_WIDTH; ++c) {
+            if(*tile_cursor) {
+                *tile_cursor |= check_neighbors(c, r) << 3;
+            }
+            ++tile_cursor;
+        }
+    }
+
+    tile_cursor = tilemap;
+    for(r = 0; r < MAP_WIDTH; ++r) {
+        for(c = 0; c < MAP_WIDTH; ++c) {
+            if(!(*tile_cursor & 128)) {
+                *tile_cursor = 120;
+            }
+            *tile_cursor ^= 120;
+            ++tile_cursor;
+        }
+    }
+}
+
+void generate_shop_instead() {
+    static char r, c, tmp;
+    static char* tile_cursor_src;
+    static char* tile_cursor_dest;
+    tile_cursor_src = shop_tiles;
+    tile_cursor_dest = tilemap + MAPINDEX(SHOP_MAP_OFFSET_Y, SHOP_MAP_OFFSET_X);
+    for(r = 0; r < SHOP_HEIGHT; ++r) {
+        for(c = 0; c < SHOP_WIDTH; ++c) {
+            *tile_cursor_dest = *tile_cursor_src;
+            ++tile_cursor_src;
+            ++tile_cursor_dest;
+        }
+        tile_cursor_dest -= SHOP_WIDTH;
+        tile_cursor_dest += MAP_WIDTH;
+    }
+
+    setup_wall_outlines();
+
+    tile_cursor_src = shop_objects;
+    tile_cursor_dest = object_layer + MAPINDEX(SHOP_MAP_OFFSET_Y, SHOP_MAP_OFFSET_X);
+    for(r = 0; r < SHOP_HEIGHT; ++r) {
+        for(c = 0; c < SHOP_WIDTH; ++c) {
+            tmp = *tile_cursor_src;
+            if(tmp & 128) {
+                if(tmp == SHOP_ITEM_LOW_PRICE) {
+                    *tile_cursor_dest = shop_items_low_price_list[rnd_range(0, sizeof(shop_items_low_price_list))];
+                } else {
+                    *tile_cursor_dest = shop_items_high_price_list[rnd_range(0, sizeof(shop_items_high_price_list))];
+                }
+            } else {
+                switch(tmp) {
+                    case 0x40:
+                    player_x = c + SHOP_MAP_OFFSET_X;
+                    player_y = r + SHOP_MAP_OFFSET_Y;
+                    break;
+                    case 0x16:
+                    case 0x17:
+                    case 0x18:
+                    tilemap[MAPINDEX(r+SHOP_MAP_OFFSET_Y, c+SHOP_MAP_OFFSET_X)] = 128;
+                    break;
+                    case 0x19:
+                    add_enemy(16, c + SHOP_MAP_OFFSET_X, r + SHOP_MAP_OFFSET_Y);
+                    tmp = 0;
+                    break;
+                }
+                *tile_cursor_dest = tmp;
+            }
+
+            ++tile_cursor_src;
+            ++tile_cursor_dest;
+        }
+        tile_cursor_dest -= SHOP_WIDTH;
+        tile_cursor_dest += MAP_WIDTH;
+    }
+
+}
+
 void generate_dungeon_impl() {
     static char r, c, r2, c2;
     static char* tile_cursor;
@@ -225,6 +308,10 @@ void generate_dungeon_impl() {
         }
     }
 
+    if(floor_ones == 5) {
+        generate_shop_instead();
+        return;
+    }
 
     //Place the "breaks" that grid the rooms
     h_breaks[0] = 0;
@@ -418,26 +505,9 @@ partition_region_select:
     r = rnd_range(rooms_y1[room_idx], rooms_y2[room_idx]);
     object_layer[MAPINDEX(r, c)] = 0x10;
 
-    tile_cursor = tilemap;
-    for(r = 0; r < MAP_WIDTH; ++r) {
-        for(c = 0; c < MAP_WIDTH; ++c) {
-            if(*tile_cursor) {
-                *tile_cursor |= check_neighbors(c, r) << 3;
-            }
-            ++tile_cursor;
-        }
-    }
+   setup_wall_outlines();
 
-    tile_cursor = tilemap;
-    for(r = 0; r < MAP_WIDTH; ++r) {
-        for(c = 0; c < MAP_WIDTH; ++c) {
-            if(!(*tile_cursor & 128)) {
-                *tile_cursor = 120;
-            }
-            *tile_cursor ^= 120;
-            ++tile_cursor;
-        }
-    }
+    
 
     tile_cursor = object_layer;
     for(r = 0; r < MAP_WIDTH; ++r) {

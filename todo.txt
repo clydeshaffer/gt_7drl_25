@@ -1,11 +1,7 @@
 - treasure chests
 
-- cats
-
 - longer music
 
 - title music
-
-- shops
 
 - UI counter for money

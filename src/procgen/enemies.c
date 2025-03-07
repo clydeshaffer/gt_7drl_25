@@ -19,12 +19,12 @@ char enemy_data[MAX_ENEMIES];
 char enemy_turn_counter[MAX_ENEMIES];
 char enemy_count;
 
-const char enemy_type_initial_hp[ENEMY_TYPE_COUNT] =        { 2, 8, 5, 8, 4, 10, 10, 20, 8, 40, 50, 50, 60, 66, 80, 66 };
-const char enemy_type_attack_modifiers[ENEMY_TYPE_COUNT] =  { 0, 0, 0, 1, 1,  1,  2,  2, 2,  3,  3,  3,  4,  5,  3,  5 };
-const char enemy_type_defense_modifiers[ENEMY_TYPE_COUNT] = { 0, 1, 2, 2, 4,  3,  4,  5, 5,  6,  7,  8,  9, 13, 13, 13 };
+const char enemy_type_initial_hp[ENEMY_TYPE_COUNT] =        { 2, 8, 5, 8, 4, 10, 10, 20, 8, 40, 50, 50, 60, 66, 80, 66, 99, 99 };
+const char enemy_type_attack_modifiers[ENEMY_TYPE_COUNT] =  { 0, 0, 0, 1, 1,  1,  2,  2, 2,  3,  3,  3,  4,  5,  3,  5,  0, 99 };
+const char enemy_type_defense_modifiers[ENEMY_TYPE_COUNT] = { 0, 1, 2, 2, 4,  3,  4,  5, 5,  6,  7,  8,  9, 13, 13, 13, 99, 99 };
 
 #pragma data-name (push, "PROG0")
-const char enemy_turn_rate[ENEMY_TYPE_COUNT] = { 128, 128, 171, 128, 171, 171, 192, 178, 128, 192, 192, 200, 192, 255, 64, 255};
+const char enemy_turn_rate[ENEMY_TYPE_COUNT] = { 128, 128, 171, 128, 171, 171, 192, 178, 128, 192, 192, 200, 192, 255, 64, 255, 128, 128};
 
 const char enemy_config[ENEMY_TYPE_COUNT] = {
     /*Slime:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_DEFENSIVELY | ENEMY_FLAG_WANDERWALL,
@@ -42,7 +42,9 @@ const char enemy_config[ENEMY_TYPE_COUNT] = {
     /*Snatcher:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL,
     /*Manus Dexter:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_SOON | ENEMY_FLAG_HIT_AND_RUN,
     /*Remnant Fiend:*/ ENEMY_MOVEMENT_SIT | ENEMY_AGGRO_PASSIVE | ENEMY_FLAG_RANGED_ATTACKS,
-    /*Manus Sinister:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_SOON | ENEMY_FLAG_HIT_AND_RUN
+    /*Manus Sinister:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_SOON | ENEMY_FLAG_HIT_AND_RUN,
+    /*Kitty Cat:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PASSIVE | ENEMY_FLAG_CUTE,
+    /*Big Kitty Cat:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PASSIVE | ENEMY_FLAG_CUTE,
 };
 
 #pragma data-name (pop)
@@ -70,7 +72,9 @@ const char enemy_type_name[ENEMY_TYPE_COUNT] = {
     WORDS_TAG_SNATCHER_START,
     WORDS_TAG_DEXTER_START,
     WORDS_TAG_FIEND_START,
-    WORDS_TAG_SINISTER_START
+    WORDS_TAG_SINISTER_START,
+    WORDS_TAG_CAT_START,
+    WORDS_TAG_CAT_START,
 };
 
 char enemy_idx;
@@ -95,6 +99,7 @@ void reset_enemies() {
 }
 
 void damage_enemy(char enemy_id, char dmg) {
+    if(enemy_data[enemy_id] & ENEMY_FLAG_CUTE) return;
     enemy_hp[enemy_id] -= dmg;
     if(enemy_hp[enemy_id] & 128) {
         enemy_hp[enemy_id] = 0;
@@ -122,6 +127,10 @@ char add_enemy(char type, char x, char y) {
             enemy_data[enemy_idx] = enemy_config[type];
             enemy_turn_counter[enemy_idx] = rnd_range(0, 256);
             ++enemy_count;
+
+
+            if(type == 16) enemy_icons[enemy_idx] = 0x19;
+            if(type == 17) enemy_icons[enemy_idx] = 0x1A;
             return enemy_idx+1;
         }
     }
@@ -201,36 +210,38 @@ void act_enemies_impl() {
                 tmpidx = MAPINDEX(ty, tx);
                 if(!(tilemap[tmpidx] & 128) && !(enemy_layer[tmpidx])) {
                     if((object_layer[tmpidx] & 0xF0) == 0x40) {
-                        dmg = roll_damage(enemy_type_attack_modifiers[etype]);
-                        player_old_hp = player_hp;
+                        if(!(enemy_data[enemy_idx] & ENEMY_FLAG_CUTE)) {
+                            dmg = roll_damage(enemy_type_attack_modifiers[etype]);
+                            player_old_hp = player_hp;
 
-                        attack_roll_counter = enemy_type_attack_modifiers[etype]+1;
-                        while(attack_roll_counter--) {
-                            player_hp -= dmg;
-                        }
-
-                        if(player_hp & 128) player_hp = 0;
-
-                        if(dmg) {
-                            if(buff_type == BUFF_GUARD) {
-                                player_hp = player_old_hp;
-                                push_log(WORDS_TAG_BLOCKED_START, enemy_type_name[etype], 255);
-                                play_sound_effect(ASSET__asset_main__spell_sfx_ID, 2);
-                                set_buff(BUFF_NONE);
-                            } else {
-                                player_heal_tick = 0;
-                                flash_background();
-                                play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
-                                if(player_hp == 0) {
-                                    dmg = WORDS_TAG_SLAIN_START;
-                                }
-                                push_log(WORDS_TAG_MISSED_START + dmg, WORDS_TAG_BY_START, enemy_type_name[etype]);
+                            attack_roll_counter = enemy_type_attack_modifiers[etype]+1;
+                            while(attack_roll_counter--) {
+                                player_hp -= dmg;
                             }
-                        }
 
-                        if(enemy_data[enemy_idx] & ENEMY_FLAG_HIT_AND_RUN) {
-                            enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
-                            enemy_data[enemy_idx] |= ENEMY_MOVEMENT_RETREAT;
+                            if(player_hp & 128) player_hp = 0;
+
+                            if(dmg) {
+                                if(buff_type == BUFF_GUARD) {
+                                    player_hp = player_old_hp;
+                                    push_log(WORDS_TAG_BLOCKED_START, enemy_type_name[etype], 255);
+                                    play_sound_effect(ASSET__asset_main__spell_sfx_ID, 2);
+                                    set_buff(BUFF_NONE);
+                                } else {
+                                    player_heal_tick = 0;
+                                    flash_background();
+                                    play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
+                                    if(player_hp == 0) {
+                                        dmg = WORDS_TAG_SLAIN_START;
+                                    }
+                                    push_log(WORDS_TAG_MISSED_START + dmg, WORDS_TAG_BY_START, enemy_type_name[etype]);
+                                }
+                            }
+
+                            if(enemy_data[enemy_idx] & ENEMY_FLAG_HIT_AND_RUN) {
+                                enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
+                                enemy_data[enemy_idx] |= ENEMY_MOVEMENT_RETREAT;
+                            }
                         }
                     } else {
                         if((enemy_data[enemy_idx] & ENEMY_BITFIELD_MOVEMENT) != ENEMY_MOVEMENT_SIT) {

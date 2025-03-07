@@ -3,7 +3,7 @@
 
 #include "tilemap.h"
 #define MAX_ENEMIES 24
-#define ENEMY_TYPE_COUNT 16
+#define ENEMY_TYPE_COUNT 18
 
 #define ENEMY_MOVEMENT_SIT 0 //dont move, "chase" only if distance=1
 #define ENEMY_MOVEMENT_WANDER 1 //pick a direction randomly
@@ -17,7 +17,7 @@
 #define ENEMY_AGGRO_SOON 12 //some % chance of switching to chase on a given turn
 #define ENEMY_BITFIELD_AGGRO 0b00001100 //mask for enemy aggro bitfield
 
-#define ENEMY_FLAG_UNUSED 16 //might come in handy
+#define ENEMY_FLAG_CUTE 16 //cannot harm or be harmed, "attacks" show petting text
 #define ENEMY_FLAG_HIT_AND_RUN 32 //change to retreat mode after attacking
 #define ENEMY_FLAG_RANGED_ATTACKS 64 //use ranged attacks periodically
 #define ENEMY_FLAG_WANDERWALL 128 //switch to wander when hitting a wall
