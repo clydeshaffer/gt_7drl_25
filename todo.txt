@@ -4,8 +4,6 @@
 
 - title music
 
-- shop music
-
 - UI counter for money
 
 - boss at floor 99
