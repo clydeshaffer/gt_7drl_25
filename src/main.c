@@ -435,8 +435,11 @@ int main () {
         if(do_generation_next_frame) {
             generate_dungeon();
             push_log_num(WORDS_TAG_DEPTH_START, WORDS_TAG_DIGITS_START + floor_tens, WORDS_TAG_DIGITS_START + floor_ones);
-            if(floor_ones == 5) {
+            if(IS_SHOP_FLOOR) {
                 push_log(WORDS_TAG_WELCOME_START, WORDS_TAG_MY_SHOP_START, 255);
+                play_song(ASSET__asset_main__muzak_mid, REPEAT_LOOP);
+            } else if(IS_ONE_AFTER_SHOP_FLOOR) {
+                play_song(ASSET__asset_main__song1_mid, REPEAT_LOOP);
             }
             object_layer[MAPINDEX(player_y, player_x)] = player_icon;
             do_generation_next_frame = 0;

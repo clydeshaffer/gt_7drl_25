@@ -9,6 +9,9 @@
 #include "../gen/assets/asset_main.h"
 #include "../gen/bank_nums.h"
 #include "../gt/banking.h"
+#include "../linescan.h"
+
+extern char player_heal_tick;
 
 char enemy_types[MAX_ENEMIES];
 char enemy_icons[MAX_ENEMIES];
@@ -33,7 +36,7 @@ const char enemy_config[ENEMY_TYPE_COUNT] = {
     /*Zombie:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL,
     /*Ghost:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL | ENEMY_FLAG_HIT_AND_RUN,
     /*Skeleton:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_SOON | ENEMY_FLAG_WANDERWALL,
-    /*Naga:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL,
+    /*Naga:*/  ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL | ENEMY_FLAG_HIT_AND_RUN,
     /*Ogre:*/ ENEMY_MOVEMENT_SIT | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL,
     /*Mage:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PASSIVE | ENEMY_FLAG_WANDERWALL | ENEMY_FLAG_HIT_AND_RUN | ENEMY_FLAG_RANGED_ATTACKS,
     /*Devil:*/ ENEMY_MOVEMENT_WANDER | ENEMY_AGGRO_PROXIMITY | ENEMY_FLAG_WANDERWALL,
@@ -108,6 +111,10 @@ void damage_enemy(char enemy_id, char dmg) {
             enemy_data[enemy_id] &= ~ENEMY_BITFIELD_MOVEMENT;
             enemy_data[enemy_id] |= ENEMY_MOVEMENT_CHASE;
         }
+        if(enemy_data[enemy_idx] & ENEMY_FLAG_HIT_AND_RUN) {
+            enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
+            enemy_data[enemy_idx] |= ENEMY_MOVEMENT_RETREAT;
+        }
     }
 }
 
@@ -138,10 +145,41 @@ char add_enemy(char type, char x, char y) {
     return 0;
 }
 
-extern char player_heal_tick;
+
+
+void roll_attack_against_player(char etype) {
+    static char attack_roll_counter, dmg, player_old_hp;
+    dmg = roll_damage(enemy_type_attack_modifiers[etype]);
+    player_old_hp = player_hp;
+
+    attack_roll_counter = enemy_type_attack_modifiers[etype]+1;
+    while(attack_roll_counter--) {
+        player_hp -= dmg;
+    }
+
+    if(player_hp & 128) player_hp = 0;
+
+    if(dmg) {
+        if(buff_type == BUFF_GUARD) {
+            player_hp = player_old_hp;
+            push_log(WORDS_TAG_BLOCKED_START, enemy_type_name[etype], 255);
+            play_sound_effect(ASSET__asset_main__spell_sfx_ID, 2);
+            set_buff(BUFF_NONE);
+        } else {
+            player_heal_tick = 0;
+            flash_background();
+            play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
+            if(player_hp == 0) {
+                dmg = WORDS_TAG_SLAIN_START;
+            }
+            push_log(WORDS_TAG_MISSED_START + dmg, WORDS_TAG_BY_START, enemy_type_name[etype]);
+        }
+    }
+}
+
 void act_enemies_impl() {
     static signed char tx, ty, sx, sy;
-    static char dmg, player_old_hp, attack_roll_counter, etype, skip, tctr;
+    static char dist, etype, skip, tctr;
     static int tmpidx;
     ++action_counter;
 
@@ -211,32 +249,8 @@ void act_enemies_impl() {
                 if(!(tilemap[tmpidx] & 128) && !(enemy_layer[tmpidx])) {
                     if((object_layer[tmpidx] & 0xF0) == 0x40) {
                         if(!(enemy_data[enemy_idx] & ENEMY_FLAG_CUTE)) {
-                            dmg = roll_damage(enemy_type_attack_modifiers[etype]);
-                            player_old_hp = player_hp;
-
-                            attack_roll_counter = enemy_type_attack_modifiers[etype]+1;
-                            while(attack_roll_counter--) {
-                                player_hp -= dmg;
-                            }
-
-                            if(player_hp & 128) player_hp = 0;
-
-                            if(dmg) {
-                                if(buff_type == BUFF_GUARD) {
-                                    player_hp = player_old_hp;
-                                    push_log(WORDS_TAG_BLOCKED_START, enemy_type_name[etype], 255);
-                                    play_sound_effect(ASSET__asset_main__spell_sfx_ID, 2);
-                                    set_buff(BUFF_NONE);
-                                } else {
-                                    player_heal_tick = 0;
-                                    flash_background();
-                                    play_sound_effect(ASSET__asset_main__pain2_sfx_ID, 2);
-                                    if(player_hp == 0) {
-                                        dmg = WORDS_TAG_SLAIN_START;
-                                    }
-                                    push_log(WORDS_TAG_MISSED_START + dmg, WORDS_TAG_BY_START, enemy_type_name[etype]);
-                                }
-                            }
+                            
+                            roll_attack_against_player(etype);
 
                             if(enemy_data[enemy_idx] & ENEMY_FLAG_HIT_AND_RUN) {
                                 enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
@@ -255,14 +269,15 @@ void act_enemies_impl() {
                     //only switch to wander if hitting a wall, not another enemy
                     if(tilemap[tmpidx]&128) {
                         if(enemy_data[enemy_idx] & ENEMY_FLAG_WANDERWALL) {
-                            enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
-                            enemy_data[enemy_idx] |= ENEMY_MOVEMENT_WANDER;
+                            if((enemy_data[enemy_idx] & ENEMY_BITFIELD_MOVEMENT) != ENEMY_MOVEMENT_SIT) {
+                                enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
+                                enemy_data[enemy_idx] |= ENEMY_MOVEMENT_WANDER;
+                            }
                         }
                     }
                 }
             }
 
-            //reusing dmg as tmp distance var
             if(player_x > enemy_x[enemy_idx])
                 tx = player_x - enemy_x[enemy_idx];
             else 
@@ -272,17 +287,19 @@ void act_enemies_impl() {
                 ty = player_y - enemy_y[enemy_idx];
             else 
                 ty = enemy_y[enemy_idx] - player_y;
-            dmg = tx + ty;
-            if(dmg < enemy_closest_dist) {
-                enemy_closest_dist = dmg;
+            dist = tx + ty;
+            if(dist < enemy_closest_dist) {
+                enemy_closest_dist = dist;
                 enemy_closest_idx = enemy_idx;
             }
 
             switch(enemy_data[enemy_idx] & ENEMY_BITFIELD_AGGRO) {
                 case ENEMY_AGGRO_PROXIMITY:
-                if(dmg < ENEMY_PROXIMITY_AGGRO_RANGE) {
-                    enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
-                    enemy_data[enemy_idx] |= ENEMY_MOVEMENT_CHASE;
+                if(dist < ENEMY_PROXIMITY_AGGRO_RANGE) {
+                    if((enemy_data[enemy_idx] & ENEMY_BITFIELD_MOVEMENT) != ENEMY_MOVEMENT_RETREAT) {
+                        enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
+                        enemy_data[enemy_idx] |= ENEMY_MOVEMENT_CHASE;
+                    }
                 }
                 break;
                 case ENEMY_AGGRO_SOON:
@@ -291,6 +308,23 @@ void act_enemies_impl() {
                     enemy_data[enemy_idx] |= ENEMY_MOVEMENT_CHASE;
                 }
                 break;
+            }
+
+            if((enemy_data[enemy_idx] & ENEMY_FLAG_RANGED_ATTACKS)) {
+                if(dist < ENEMY_PROXIMITY_AGGRO_RANGE) {
+                    if(rnd_range(0,100) < 10) {
+                        projectile_sprite = 0x80;
+                        play_sound_effect(ASSET__asset_main__spell2_sfx_ID, 2);
+                        push_log(enemy_type_name[etype], WORDS_TAG_CAST_SPELL_START, 255);
+                        if(scan_line(enemy_x[enemy_idx],enemy_y[enemy_idx],player_x, player_y)) {
+                            roll_attack_against_player(etype);
+                        }
+                        if(enemy_data[enemy_idx] & ENEMY_FLAG_HIT_AND_RUN) {
+                            enemy_data[enemy_idx] &= ~ENEMY_BITFIELD_MOVEMENT;
+                            enemy_data[enemy_idx] |= ENEMY_MOVEMENT_RETREAT;
+                        }
+                    }
+                }
             }
         }
     }

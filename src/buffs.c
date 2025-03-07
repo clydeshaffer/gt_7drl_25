@@ -1,6 +1,7 @@
 #include "buffs.h"
 #include "gen/assets/asset_main/words.json.h"
 #include "logtext.h"
+#include "procgen/tilemap.h"
 
 const char buff_names[BUFF_TYPE_COUNT] = {
     255,
@@ -25,6 +26,7 @@ void set_buff(char newbuff) {
 }
 
 void tick_buff() {
+    if(IS_SHOP_FLOOR) return;
     if(buff_duration) {
         if(buff_type != BUFF_GUARD) {
             --buff_duration;

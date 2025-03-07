@@ -9,6 +9,9 @@
 #define MAP_DRAW_WIDTH 96
 #define MAPINDEX(row,col) (col + (row<<5))
 
+#define IS_SHOP_FLOOR (floor_num == 5)
+#define IS_ONE_AFTER_SHOP_FLOOR (floor_num == 6)
+
 extern char tilemap[MAP_WIDTH * MAP_WIDTH];
 extern char object_layer[MAP_WIDTH * MAP_WIDTH];
 extern char enemy_layer[MAP_WIDTH * MAP_WIDTH];

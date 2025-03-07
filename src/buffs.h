@@ -1,7 +1,7 @@
 #ifndef BUFFS_H
 #define BUFFS_H
 
-#define BUFF_INITIAL_TIME 32
+#define BUFF_INITIAL_TIME 64
 
 #define BUFF_NONE 0
 #define BUFF_SPEED 1

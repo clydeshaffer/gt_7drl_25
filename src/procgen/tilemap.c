@@ -308,7 +308,7 @@ void generate_dungeon_impl() {
         }
     }
 
-    if(floor_ones == 5) {
+    if(IS_SHOP_FLOOR) {
         generate_shop_instead();
         return;
     }
