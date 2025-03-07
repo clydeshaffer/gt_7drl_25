@@ -402,7 +402,6 @@ int main () {
     setup_dungeon_render();
     prepare_log_text();
 
-    
     auto_tick_music = 1;
     
     while (1) {
@@ -440,6 +439,8 @@ int main () {
                 play_song(ASSET__asset_main__muzak_mid, REPEAT_LOOP);
             } else if(IS_ONE_AFTER_SHOP_FLOOR) {
                 play_song(ASSET__asset_main__song1_mid, REPEAT_LOOP);
+            } else if(floor_num == FINAL_BOSS_FLOOR) {
+                play_song(ASSET__asset_main__boss_mid, REPEAT_LOOP);
             }
             object_layer[MAPINDEX(player_y, player_x)] = player_icon;
             do_generation_next_frame = 0;
