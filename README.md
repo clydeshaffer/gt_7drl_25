@@ -2,6 +2,29 @@
 
 Built for the 2025 edition of the 7 Day Roguelike Challenge
 
+99 levels of dungeon
+
+12 kinds of monsters
+
+1 fiendish final boss
+
+and several cats to pet along the way
+
+Controls:
+
+A - Pick up items
+
+B - Cancel ranged attack / wait one turn
+
+C - Initiate/confirm ranged attacks
+
+Start - Toggle extended message log
+
+Directions - Walk/Melee Attack/Move ranged targeting reticle
+
+
+## Building the ROM
+
 Build it with the "make" command
 
 Import art/music by adding it to a folder inside the "assets" directory, and then run "make import" to update generated project files.

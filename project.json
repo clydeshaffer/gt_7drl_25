@@ -1,6 +1,6 @@
 {
-    "title" : "My GameTank Game",
-    "romname" : "game.gtr",
+    "title" : "Legacy of the Fiend",
+    "romname" : "legacy.gtr",
     "progbanks" : 1,
     "modules" : [
         "PERSIST",
