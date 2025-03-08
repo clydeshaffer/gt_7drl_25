@@ -270,7 +270,9 @@ void tick_world() {
     ++player_heal_tick;
     if(player_heal_tick == PLAYER_HEAL_INTERVAL) {
         if(player_hp < player_max_hp) {
-            ++player_hp;
+            if(player_hp < (player_max_hp >> 1)) {
+                ++player_hp;
+            }
         } else if(player_mp < player_max_mp) {
             ++player_mp;
         }
