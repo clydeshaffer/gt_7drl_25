@@ -45,6 +45,9 @@ char auto_tick_music = 0;
 char started_victory_sequence = 0;
 char tmp;
 
+char key_repeat_counter = 0;
+#define KEY_REPEAT_FRAMES 15
+
 #define PAUSE_MODE_NONE 0
 #define PAUSE_MODE_LOG 1
 #define PAUSE_MODE_TITLE 2
@@ -500,6 +503,17 @@ int main () {
         }
 
         update_inputs();
+
+        if(player1_buttons) {
+            if(key_repeat_counter < KEY_REPEAT_FRAMES) {
+                ++key_repeat_counter;
+            } else {
+                player1_old_buttons = 0;
+                player1_new_buttons = player1_buttons & ~(INPUT_MASK_A | INPUT_MASK_C | INPUT_MASK_START);
+            }
+        } else {
+            key_repeat_counter = 0;
+        }
 
         player_old_x = player_x;
         player_old_y = player_y;
