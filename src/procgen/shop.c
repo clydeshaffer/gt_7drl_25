@@ -1,12 +1,13 @@
 #include "shop.h"
-#define O 0x00
-#define X 0x80
-#define S 0x40
-#define E 0x10
-#define K 0x18
-#define C 0x19
-#define T 0x16
-#define N 0x17
+#define O 0x00 //empty
+#define X 0x80 //wall
+#define S 0x40 //Start
+#define E 0x10 //Exit
+#define K 0x18 //shopKeeper
+#define C 0x19 //cat
+#define BC 0x20 //Big Cat
+#define T 0x16 // Ten coin sign
+#define N 0x17 //Ninetynine coin sign
 #define L SHOP_ITEM_LOW_PRICE
 #define H STOP_ITEM_HIGH_PRICE
 
@@ -32,7 +33,7 @@ const char shop_objects[SHOP_TILE_COUNT] = {
     O, O, O, O, T, O, T, O, N, O, O, O, O,
     O, O, O, O, O, O, O, O, O, O, O, O, O,
     O, O, O, O, O, O, O, O, O, O, O, O, O,
-    O, O, O, O, O, O, K, C, O, O, O, O, O,
+    O, O, O, O, O,BC, K, C, O, O, O, O, O,
     O, O, O, O, O, O, O, O, O, O, O, O, O,
     O, O, O, O, O, O, O, O, O, O, O, O, O,
     O, O, O, O, O, O, O, O, O, O, O, O, O,

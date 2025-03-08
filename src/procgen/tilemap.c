@@ -261,6 +261,7 @@ void generate_shop_instead() {
                     case 0x19:
                     enemy_layer[MAPINDEX(r+SHOP_MAP_OFFSET_Y, c+SHOP_MAP_OFFSET_X)] = add_enemy(16, c + SHOP_MAP_OFFSET_X, r + SHOP_MAP_OFFSET_Y);
                     tmp = 0;
+                    break;
                     case 0x20:
                     enemy_layer[MAPINDEX(r+SHOP_MAP_OFFSET_Y, c+SHOP_MAP_OFFSET_X)] = add_enemy(17, c + SHOP_MAP_OFFSET_X, r + SHOP_MAP_OFFSET_Y);
                     tmp = 0;
